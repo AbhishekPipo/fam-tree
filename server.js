@@ -2,13 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
+const swaggerSpec = require('./src/config/swagger');
 require('dotenv').config();
 
-const { sequelize } = require('./models');
-const authRoutes = require('./routes/authRoutes');
-const familyRoutes = require('./routes/familyRoutes');
-const { errorHandler } = require('./middleware/errorHandler');
+const { sequelize } = require('./src/models');
+const authRoutes = require('./src/routes/authRoutes');
+const familyRoutes = require('./src/routes/familyRoutes');
+const { errorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +23,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
+
+// Swagger JSON endpoint
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

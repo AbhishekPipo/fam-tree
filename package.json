@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "setup-db": "node utils/setupDatabase.js",
-    "test-api": "node test-api.js"
+    "setup-db": "node src/utils/setupDatabase.js"
   },
   "dependencies": {
     "axios": "^1.11.0",
@@ -24,7 +23,8 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "sequelize-cli": "^6.6.3"
   },
   "keywords": [
     "family-tree",

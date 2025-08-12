@@ -1,0 +1,22 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "Test@123",
+    "database": "family_tree_db",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "Test@123",
+    "database": "family_tree_db_test",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres"
+  }
+}
