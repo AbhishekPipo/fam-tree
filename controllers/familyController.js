@@ -23,6 +23,18 @@ const getFamilyTree = catchAsync(async (req, res) => {
     }]
   });
 
+  // Helper function to get direct relationships for any user
+  const getDirectRelationshipsForUser = async (targetUserId) => {
+    return await DirectRelationship.findAll({
+      where: { userId: targetUserId },
+      include: [{
+        model: User,
+        as: 'relatedUser',
+        attributes: ['id', 'firstName', 'lastName', 'gender', 'email']
+      }]
+    });
+  };
+
   // Get indirect relationships (all other family members)
   const indirectRelationships = await IndirectRelationship.findAll({
     where: { userId },
@@ -80,6 +92,22 @@ const getFamilyTree = catchAsync(async (req, res) => {
   // Sort relationships
   ancestors.sort((a, b) => b.level - a.level); // Descending order (closest first)
   descendants.sort((a, b) => a.level - b.level); // Ascending order (closest first)
+
+  // Add direct relationship information for ancestors
+  for (let ancestor of ancestors) {
+    const directRels = await getDirectRelationshipsForUser(ancestor.user.id);
+    if (directRels.length > 0) {
+      ancestor.directRelationships = directRels.map(rel => ({
+        partner: {
+          id: rel.relatedUser.id,
+          firstName: rel.relatedUser.firstName,
+          lastName: rel.relatedUser.lastName,
+          gender: rel.relatedUser.gender
+        },
+        relationshipType: rel.relationshipType
+      }));
+    }
+  }
 
   // Calculate total family members
   const totalMembers = 1 + ancestors.length + descendants.length + adjacent.length;

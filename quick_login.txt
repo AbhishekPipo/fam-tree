@@ -1,0 +1,19 @@
+QUICK LOGIN REFERENCE
+====================
+
+👩 SIMRAN PATEL (Daughter):
+Email: simran@family.com
+Password: FamilyTree123!
+
+👨 ALL OTHER USERS:
+• ramesh@family.com - FamilyTree123!
+• mallika@family.com - FamilyTree123!  
+• prashanth@family.com - FamilyTree123!
+• anjali@family.com - FamilyTree123!
+• arjun@family.com - FamilyTree123!
+• elina@family.com - FamilyTree123!
+• rohan@family.com - FamilyTree123!
+• suresh@family.com - FamilyTree123! [NEW]
+
+🌐 LOGIN URL: http://localhost:3000
+📱 API: POST /api/auth/login

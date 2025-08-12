@@ -117,6 +117,18 @@ const setupDatabase = async () => {
         motherId: null,
         // For this example, let's assume Arjun is the father
         fatherId: 6
+      },
+      {
+        id: 9,
+        firstName: 'Suresh',
+        lastName: 'Patel',
+        email: 'suresh@family.com',
+        password: 'FamilyTree123!',
+        gender: 'male',
+        dateOfBirth: '1948-02-10',
+        location: 'Mumbai, India',
+        hasMedication: false,
+        isDeceased: false
       }
     ], {
       individualHooks: true // This ensures password hashing hooks are triggered
@@ -206,7 +218,27 @@ const setupDatabase = async () => {
       { userId: 8, relatedUserId: 4, relationshipLevel: 2, relationshipType: 'grandmother' }, // Anjali is grandmother
       { userId: 8, relatedUserId: 5, relationshipLevel: 1, relationshipType: 'aunt' },       // Simran is aunt
       { userId: 8, relatedUserId: 6, relationshipLevel: 1, relationshipType: 'father' },     // Arjun is father
-      { userId: 8, relatedUserId: 7, relationshipLevel: 0, relationshipType: 'cousin' }      // Elina is cousin
+      { userId: 8, relatedUserId: 7, relationshipLevel: 0, relationshipType: 'cousin' },     // Elina is cousin
+
+      // Suresh's relationships (ID: 9) - Ramesh's brother
+      { userId: 9, relatedUserId: 1, relationshipLevel: 0, relationshipType: 'brother' },    // Ramesh is brother
+      { userId: 9, relatedUserId: 2, relationshipLevel: 0, relationshipType: 'sister-in-law' }, // Mallika is sister-in-law
+      { userId: 9, relatedUserId: 3, relationshipLevel: -1, relationshipType: 'nephew' },    // Prashanth is nephew
+      { userId: 9, relatedUserId: 4, relationshipLevel: -1, relationshipType: 'niece-in-law' }, // Anjali is niece-in-law
+      { userId: 9, relatedUserId: 5, relationshipLevel: -2, relationshipType: 'grand-nephew' }, // Simran is grand-nephew
+      { userId: 9, relatedUserId: 6, relationshipLevel: -2, relationshipType: 'grand-nephew' }, // Arjun is grand-nephew
+      { userId: 9, relatedUserId: 7, relationshipLevel: -3, relationshipType: 'great-grand-niece' }, // Elina is great-grand-niece
+      { userId: 9, relatedUserId: 8, relationshipLevel: -3, relationshipType: 'great-grand-nephew' }, // Rohan is great-grand-nephew
+
+      // Add Suresh to everyone else's relationships
+      { userId: 1, relatedUserId: 9, relationshipLevel: 0, relationshipType: 'brother' },    // Suresh is Ramesh's brother
+      { userId: 2, relatedUserId: 9, relationshipLevel: 0, relationshipType: 'brother-in-law' }, // Suresh is Mallika's brother-in-law
+      { userId: 3, relatedUserId: 9, relationshipLevel: 1, relationshipType: 'uncle' },      // Suresh is Prashanth's uncle
+      { userId: 4, relatedUserId: 9, relationshipLevel: 1, relationshipType: 'uncle-in-law' }, // Suresh is Anjali's uncle-in-law
+      { userId: 5, relatedUserId: 9, relationshipLevel: 2, relationshipType: 'great-uncle' }, // Suresh is Simran's great-uncle
+      { userId: 6, relatedUserId: 9, relationshipLevel: 2, relationshipType: 'great-uncle' }, // Suresh is Arjun's great-uncle
+      { userId: 7, relatedUserId: 9, relationshipLevel: 3, relationshipType: 'great-great-uncle' }, // Suresh is Elina's great-great-uncle
+      { userId: 8, relatedUserId: 9, relationshipLevel: 3, relationshipType: 'great-great-uncle' }  // Suresh is Rohan's great-great-uncle
     ];
 
     await IndirectRelationship.bulkCreate(indirectRelationships);
@@ -214,7 +246,7 @@ const setupDatabase = async () => {
     console.log('✅ Indirect relationships created');
 
     console.log('\n🌳 Sample Family Tree Structure:');
-    console.log('Ramesh (grandfather) ↔ Mallika (grandmother)');
+    console.log('Ramesh (grandfather) ↔ Mallika (grandmother)    Suresh (brother)');
     console.log('       ↓');
     console.log('Prashanth (father) ↔ Anjali (mother)');
     console.log('       ↓                    ↓');
@@ -228,6 +260,7 @@ const setupDatabase = async () => {
     console.log('Email: anjali@family.com    | Password: FamilyTree123!');
     console.log('Email: simran@family.com    | Password: FamilyTree123!');
     console.log('Email: ramesh@family.com    | Password: FamilyTree123!');
+    console.log('Email: suresh@family.com    | Password: FamilyTree123! [NEW: Ramesh\'s brother]');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     console.log('\n✅ Database setup completed successfully!');
