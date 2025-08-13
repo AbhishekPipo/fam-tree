@@ -8,6 +8,7 @@ require('dotenv').config();
 const { sequelize } = require('./src/models');
 const authRoutes = require('./src/routes/authRoutes');
 const familyRoutes = require('./src/routes/familyRoutes');
+const graphRoutes = require('./src/routes/graphRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -82,6 +83,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
+app.use('/api/graph', graphRoutes);
 
 // Swagger JSON endpoint
 app.get('/api-docs/swagger.json', (req, res) => {
