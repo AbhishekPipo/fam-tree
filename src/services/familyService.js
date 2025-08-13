@@ -27,6 +27,9 @@ class FamilyService {
     // Get indirect relationships (all other family members)
     const indirectRelationships = await this._getIndirectRelationships(userId);
 
+    // Add spouse information to current user
+    const currentUserWithSpouse = await this._addSpouseInfo(currentUser, directRelationships);
+
     // Categorize relationships
     const { ancestors, descendants, adjacent } = await this._categorizeRelationships(
       directRelationships, 
@@ -34,14 +37,19 @@ class FamilyService {
       currentUser
     );
 
+    // Add spouse information to all family members
+    const ancestorsWithSpouse = await this._addSpouseInfoToUsers(ancestors);
+    const descendantsWithSpouse = await this._addSpouseInfoToUsers(descendants);
+    const adjacentWithSpouse = await this._addSpouseInfoToUsers(adjacent);
+
     // Calculate total family members
-    const totalMembers = 1 + ancestors.length + descendants.length + adjacent.length;
+    const totalMembers = 1 + ancestorsWithSpouse.length + descendantsWithSpouse.length + adjacentWithSpouse.length;
 
     return {
-      currentUser,
-      ancestors,
-      descendants,
-      adjacent,
+      currentUser: currentUserWithSpouse,
+      ancestors: ancestorsWithSpouse,
+      descendants: descendantsWithSpouse,
+      adjacent: adjacentWithSpouse,
       totalMembers
     };
   }
@@ -217,10 +225,21 @@ class FamilyService {
 
     // Process direct relationships
     directRelationships.forEach(relationship => {
+      // Get the correct relationship type from the related user's perspective
+      let correctRelationshipType = relationship.relationshipType;
+      
+      // For spouse relationships, show what the related user is to the current user
+      if (relationship.relationshipType === 'husband') {
+        correctRelationshipType = 'wife';
+      } else if (relationship.relationshipType === 'wife') {
+        correctRelationshipType = 'husband';
+      }
+      
       adjacent.push({
         user: relationship.relatedUser,
-        relationship: relationship.relationshipType,
-        level: 0
+        relationship: correctRelationshipType,
+        level: 0,
+        spouseId: relationship.relatedUser.id
       });
     });
 
@@ -653,6 +672,60 @@ class FamilyService {
         );
       }
     }
+  }
+
+  /**
+   * Add spouse information to a single user
+   * @private
+   * @param {Object} user - User object
+   * @param {Array} directRelationships - Direct relationships array
+   * @returns {Object} - User object with spouse information
+   */
+  async _addSpouseInfo(user, directRelationships) {
+    const userWithSpouse = { ...user.toJSON() };
+    
+    // Find spouse relationship for this user
+    const spouseRelationship = directRelationships.find(rel => 
+      ['husband', 'wife', 'partner'].includes(rel.relationshipType)
+    );
+    
+    if (spouseRelationship) {
+      userWithSpouse.spouseId = spouseRelationship.relatedUserId;
+    }
+    
+    return userWithSpouse;
+  }
+
+  /**
+   * Add spouse information to an array of relationship objects
+   * @private
+   * @param {Array} relationships - Array of relationship objects
+   * @returns {Array} - Array of relationship objects with spouse information added to users
+   */
+  async _addSpouseInfoToUsers(relationships) {
+    const relationshipsWithSpouse = [];
+    
+    for (const relationship of relationships) {
+      const relationshipWithSpouse = { ...relationship };
+      
+      // Get direct relationships for this user to find their spouse
+      const userDirectRelationships = await this._getDirectRelationshipsForUser(relationship.user.id);
+      
+      // Find spouse relationship
+      const spouseRelationship = userDirectRelationships.find(rel => 
+        ['husband', 'wife', 'partner'].includes(rel.relationshipType)
+      );
+      
+      // Add spouse information to the user object
+      relationshipWithSpouse.user = relationship.user.toJSON ? { ...relationship.user.toJSON() } : { ...relationship.user };
+      if (spouseRelationship) {
+        relationshipWithSpouse.user.spouseId = spouseRelationship.relatedUserId;
+      }
+      
+      relationshipsWithSpouse.push(relationshipWithSpouse);
+    }
+    
+    return relationshipsWithSpouse;
   }
 }
 
