@@ -3,7 +3,9 @@ const {
   getFamilyTree,
   addFamilyMember,
   getAllFamilyMembers,
-  removeFamilyMember
+  removeFamilyMember,
+  getRelationshipTypes,
+  getRelationshipStats
 } = require('../controllers/familyController');
 const { authenticateToken } = require('../middleware/auth');
 const { validateFamilyMember } = require('../middleware/validation');
@@ -208,5 +210,167 @@ router.post('/member', validateFamilyMember, addFamilyMember);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.delete('/member/:memberId', removeFamilyMember);
+
+/**
+ * @swagger
+ * /family/relationship-types:
+ *   get:
+ *     summary: Get available relationship types
+ *     description: Retrieves all available relationship types that can be used when adding family members, organized by category
+ *     tags: [Family Tree]
+ *     responses:
+ *       200:
+ *         description: Relationship types retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         all:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               value:
+ *                                 type: string
+ *                                 example: "father"
+ *                               label:
+ *                                 type: string
+ *                                 example: "Father"
+ *                               level:
+ *                                 type: integer
+ *                                 example: 1
+ *                               gender:
+ *                                 type: string
+ *                                 enum: [male, female, neutral]
+ *                                 example: "male"
+ *                               category:
+ *                                 type: string
+ *                                 enum: [direct, indirect]
+ *                                 example: "indirect"
+ *                               description:
+ *                                 type: string
+ *                                 example: "Male parent"
+ *                         grouped:
+ *                           type: object
+ *                           properties:
+ *                             direct:
+ *                               type: array
+ *                               description: "Spouse/partner relationships"
+ *                             parents:
+ *                               type: array
+ *                               description: "Parent relationships (level 1)"
+ *                             children:
+ *                               type: array
+ *                               description: "Child relationships (level -1)"
+ *                             siblings:
+ *                               type: array
+ *                               description: "Sibling relationships (level 0)"
+ *                             grandparents:
+ *                               type: array
+ *                               description: "Grandparent relationships (level 2)"
+ *                             grandchildren:
+ *                               type: array
+ *                               description: "Grandchild relationships (level -2)"
+ *                             extended:
+ *                               type: array
+ *                               description: "Extended family (uncles, aunts, cousins, etc.)"
+ *                         totalTypes:
+ *                           type: integer
+ *                           example: 45
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/relationship-types', getRelationshipTypes);
+
+/**
+ * @swagger
+ * /family/stats:
+ *   get:
+ *     summary: Get family relationship statistics
+ *     description: Retrieves detailed statistics about the user's family relationships including generation spread, relationship counts, and breakdowns
+ *     tags: [Family Tree]
+ *     responses:
+ *       200:
+ *         description: Family statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         totalRelationships:
+ *                           type: integer
+ *                           example: 15
+ *                           description: "Total number of family relationships"
+ *                         directRelationships:
+ *                           type: integer
+ *                           example: 1
+ *                           description: "Number of direct relationships (spouses/partners)"
+ *                         indirectRelationships:
+ *                           type: integer
+ *                           example: 14
+ *                           description: "Number of indirect relationships (blood/family)"
+ *                         generationSpread:
+ *                           type: object
+ *                           properties:
+ *                             ancestorGenerations:
+ *                               type: integer
+ *                               example: 2
+ *                               description: "Number of ancestor generations"
+ *                             descendantGenerations:
+ *                               type: integer
+ *                               example: 3
+ *                               description: "Number of descendant generations"
+ *                             totalGenerations:
+ *                               type: integer
+ *                               example: 6
+ *                               description: "Total generations in family tree"
+ *                         levelBreakdown:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               level:
+ *                                 type: integer
+ *                                 example: 1
+ *                               count:
+ *                                 type: integer
+ *                                 example: 2
+ *                               description:
+ *                                 type: string
+ *                                 example: "1 generation up"
+ *                         typeBreakdown:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               type:
+ *                                 type: string
+ *                                 example: "son"
+ *                               count:
+ *                                 type: integer
+ *                                 example: 2
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/stats', getRelationshipStats);
 
 module.exports = router;

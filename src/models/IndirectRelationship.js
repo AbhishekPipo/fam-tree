@@ -101,7 +101,22 @@ IndirectRelationship.removeBidirectional = async function(userId, relatedUserId,
 };
 
 // Helper method to get relationship type based on level and gender
-IndirectRelationship.getRelationshipType = function(level, gender) {
+IndirectRelationship.getRelationshipType = async function(level, gender) {
+  const RelationshipType = require('./RelationshipType');
+  
+  try {
+    // Try to get from database first
+    const relationshipName = await RelationshipType.getRelationshipName(level, gender);
+    return relationshipName;
+  } catch (error) {
+    console.error('Error getting relationship type:', error);
+    // Fallback to basic logic
+    return this.getBasicRelationshipType(level, gender);
+  }
+};
+
+// Fallback method for basic relationship types
+IndirectRelationship.getBasicRelationshipType = function(level, gender) {
   const relationships = {
     1: {
       male: 'father',

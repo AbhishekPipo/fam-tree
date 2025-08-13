@@ -135,8 +135,23 @@ const validateFamilyMember = [
   body('relationshipType')
     .notEmpty()
     .withMessage('Relationship type is required')
-    .isIn(['father', 'mother', 'son', 'daughter', 'husband', 'wife', 'partner', 'brother', 'sister'])
-    .withMessage('Invalid relationship type'),
+    .custom(async (value) => {
+      const { RelationshipType } = require('../models');
+      
+      // Check if the relationship type exists in our database
+      const relationshipType = await RelationshipType.findOne({
+        where: {
+          name: value,
+          isActive: true
+        }
+      });
+      
+      if (!relationshipType) {
+        throw new Error(`Invalid relationship type: ${value}. Please use a valid relationship type.`);
+      }
+      
+      return true;
+    }),
 
   handleValidationErrors
 ];

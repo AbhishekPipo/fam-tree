@@ -2,6 +2,7 @@ const sequelize = require('../config/database');
 const User = require('./User');
 const DirectRelationship = require('./DirectRelationship');
 const IndirectRelationship = require('./IndirectRelationship');
+const RelationshipType = require('./RelationshipType');
 
 // Define associations between models
 User.hasMany(DirectRelationship, { foreignKey: 'userId', as: 'directRelationships' });
@@ -21,5 +22,6 @@ module.exports = {
   sequelize,
   User,
   DirectRelationship,
-  IndirectRelationship
+  IndirectRelationship,
+  RelationshipType
 };
