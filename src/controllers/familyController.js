@@ -619,3 +619,4 @@ module.exports = {
   getRelationshipTypes,
   getRelationshipStats
 };
+
