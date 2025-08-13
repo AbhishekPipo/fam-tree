@@ -343,7 +343,10 @@ class FamilyService {
         if (['brother', 'sister', 'half-brother', 'half-sister'].includes(relationship.relationshipType)) {
           siblings.push(relationshipData);
         } else if (relationship.relationshipType === 'cousin') {
-          // Group cousins by their parent (uncle/aunt)
+          // Add cousins to adjacent (level 0) relationships for horizontal display
+          adjacent.push(relationshipData);
+          
+          // ALSO group cousins by their parent (uncle/aunt) for nested tree structure
           const user = relationship.relatedUser;
           const parentId = user.fatherId || user.motherId;
           if (parentId) {
@@ -941,15 +944,14 @@ class FamilyService {
       }
     }
 
-    // Check if user2 is nephew/niece of user1 (user2's parent is sibling of user1's parent)
+    // Check if user2 is nephew/niece of user1 (user1 is sibling of user2's parent)
     for (const user2Parent of user2Parents) {
-      for (const user1Parent of user1Parents) {
-        const parentsAreSiblings = (user2Parent.fatherId && user1Parent.fatherId && user2Parent.fatherId === user1Parent.fatherId) ||
-                                  (user2Parent.motherId && user1Parent.motherId && user2Parent.motherId === user1Parent.motherId);
-        
-        if (parentsAreSiblings) {
-          return { type: user2.gender === 'male' ? 'nephew' : 'niece', level: -1 };
-        }
+      // Check if user1 is sibling of user2's parent
+      const user1SharesFatherWithUser2Parent = user1.fatherId && user2Parent.fatherId && user1.fatherId === user2Parent.fatherId;
+      const user1SharesMotherWithUser2Parent = user1.motherId && user2Parent.motherId && user1.motherId === user2Parent.motherId;
+      
+      if (user1SharesFatherWithUser2Parent || user1SharesMotherWithUser2Parent) {
+        return { type: user2.gender === 'male' ? 'nephew' : 'niece', level: -1 };
       }
     }
 

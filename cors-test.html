@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test - Family Tree API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .token-display {
+            word-break: break-all;
+            font-size: 12px;
+            background-color: #e9ecef;
+            padding: 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌳 Family Tree API - CORS Test</h1>
+        <p>This page tests CORS (Cross-Origin Resource Sharing) functionality for the Family Tree API.</p>
+        
+        <!-- Health Check Test -->
+        <div class="test-section" id="health-test">
+            <h3>1. Health Check Test</h3>
+            <p>Testing basic API connectivity without authentication.</p>
+            <button onclick="testHealthCheck()">Test Health Check</button>
+            <div id="health-result"></div>
+        </div>
+
+        <!-- Login Test -->
+        <div class="test-section" id="login-test">
+            <h3>2. Login Test</h3>
+            <p>Testing authentication endpoint with CORS.</p>
+            <div>
+                <label>Email: <input type="email" id="email" value="prashanth@family.com" style="width: 200px;"></label><br><br>
+                <label>Password: <input type="password" id="password" value="FamilyTree123!" style="width: 200px;"></label><br><br>
+                <button onclick="testLogin()">Test Login</button>
+            </div>
+            <div id="login-result"></div>
+            <div id="token-display"></div>
+        </div>
+
+        <!-- Family Tree Test -->
+        <div class="test-section" id="family-test">
+            <h3>3. Family Tree Test</h3>
+            <p>Testing authenticated API endpoint with CORS.</p>
+            <button onclick="testFamilyTree()" id="family-btn" disabled>Test Family Tree (Login First)</button>
+            <div id="family-result"></div>
+        </div>
+
+        <!-- Relationship Fix Verification -->
+        <div class="test-section" id="relationship-test">
+            <h3>4. Relationship Fix Verification</h3>
+            <p>Verifying that cousins are correctly identified at level 0.</p>
+            <button onclick="verifyRelationshipFix()" id="relationship-btn" disabled>Verify Relationship Fix (Login First)</button>
+            <div id="relationship-result"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        function updateResult(elementId, content, className = '') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = className;
+        }
+
+        function setButtonState(buttonId, enabled, text = null) {
+            const button = document.getElementById(buttonId);
+            button.disabled = !enabled;
+            if (text) button.textContent = text;
+        }
+
+        async function testHealthCheck() {
+            updateResult('health-result', 'Testing...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateResult('health-result', 
+                        `<strong>✅ SUCCESS!</strong><br>
+                        Status: ${data.status}<br>
+                        Message: ${data.message}<br>
+                        Timestamp: ${data.timestamp}`, 
+                        'success'
+                    );
+                } else {
+                    updateResult('health-result', 
+                        `<strong>❌ HTTP Error:</strong> ${response.status} ${response.statusText}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('health-result', 
+                    `<strong>❌ CORS/Network Error:</strong><br>${error.message}<br><br>
+                    <strong>Possible solutions:</strong><br>
+                    • Make sure the server is running on port 3000<br>
+                    • Check if CORS is properly configured<br>
+                    • Verify the URL scheme is http:// or https://`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            updateResult('login-result', 'Logging in...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    authToken = data.data.token;
+                    updateResult('login-result', 
+                        `<strong>✅ LOGIN SUCCESS!</strong><br>
+                        User: ${data.data.user.firstName} ${data.data.user.lastName}<br>
+                        Email: ${data.data.user.email}<br>
+                        User ID: ${data.data.user.id}`, 
+                        'success'
+                    );
+                    
+                    updateResult('token-display', 
+                        `<strong>Auth Token:</strong><br><div class="token-display">${authToken}</div>`
+                    );
+                    
+                    // Enable authenticated tests
+                    setButtonState('family-btn', true, 'Test Family Tree');
+                    setButtonState('relationship-btn', true, 'Verify Relationship Fix');
+                } else {
+                    updateResult('login-result', 
+                        `<strong>❌ LOGIN FAILED:</strong><br>${data.message || 'Unknown error'}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('login-result', 
+                    `<strong>❌ CORS/Network Error:</strong><br>${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testFamilyTree() {
+            if (!authToken) {
+                updateResult('family-result', '❌ Please login first', 'error');
+                return;
+            }
+
+            updateResult('family-result', 'Fetching family tree...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/family/tree', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const familyData = data.data;
+                    updateResult('family-result', 
+                        `<strong>✅ FAMILY TREE SUCCESS!</strong><br>
+                        Total Members: ${familyData.totalMembers}<br>
+                        Ancestors: ${familyData.ancestors.length}<br>
+                        Adjacent: ${familyData.adjacent.length}<br>
+                        Descendants: ${familyData.descendants.length}<br><br>
+                        <strong>Adjacent Members:</strong><br>
+                        ${familyData.adjacent.map(member => 
+                            `• ${member.user.firstName} ${member.user.lastName}: ${member.relationship} (Level ${member.level})`
+                        ).join('<br>')}`, 
+                        'success'
+                    );
+                } else {
+                    updateResult('family-result', 
+                        `<strong>❌ API Error:</strong><br>${data.message || 'Unknown error'}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('family-result', 
+                    `<strong>❌ CORS/Network Error:</strong><br>${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        async function verifyRelationshipFix() {
+            if (!authToken) {
+                updateResult('relationship-result', '❌ Please login first', 'error');
+                return;
+            }
+
+            updateResult('relationship-result', 'Verifying relationship fix...', 'loading');
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/family/tree', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const familyData = data.data;
+                    
+                    // Check for Amit and Priya as cousins at level 0
+                    const amit = familyData.adjacent.find(member => 
+                        member.user.firstName === 'Amit' && member.user.lastName === 'Patel'
+                    );
+                    const priya = familyData.adjacent.find(member => 
+                        member.user.firstName === 'Priya' && member.user.lastName === 'Patel'
+                    );
+
+                    let resultHtml = '<strong>🎯 RELATIONSHIP FIX VERIFICATION:</strong><br><br>';
+                    
+                    if (amit && amit.relationship === 'cousin' && amit.level === 0) {
+                        resultHtml += '✅ <strong>Amit Patel:</strong> Correctly identified as COUSIN at LEVEL 0<br>';
+                    } else {
+                        resultHtml += `❌ <strong>Amit Patel:</strong> Expected cousin/level 0, Got: ${amit ? amit.relationship + '/level ' + amit.level : 'not found'}<br>`;
+                    }
+                    
+                    if (priya && priya.relationship === 'cousin' && priya.level === 0) {
+                        resultHtml += '✅ <strong>Priya Patel:</strong> Correctly identified as COUSIN at LEVEL 0<br>';
+                    } else {
+                        resultHtml += `❌ <strong>Priya Patel:</strong> Expected cousin/level 0, Got: ${priya ? priya.relationship + '/level ' + priya.level : 'not found'}<br>`;
+                    }
+
+                    const isFixed = (amit && amit.relationship === 'cousin' && amit.level === 0) && 
+                                   (priya && priya.relationship === 'cousin' && priya.level === 0);
+
+                    if (isFixed) {
+                        resultHtml += '<br><strong>🎉 RELATIONSHIP CALCULATION FIX: SUCCESS!</strong><br>Uncle\'s children are now correctly identified as cousins at level 0.';
+                        updateResult('relationship-result', resultHtml, 'success');
+                    } else {
+                        resultHtml += '<br><strong>❌ RELATIONSHIP CALCULATION FIX: FAILED!</strong><br>Uncle\'s children are still not correctly identified as cousins.';
+                        updateResult('relationship-result', resultHtml, 'error');
+                    }
+                } else {
+                    updateResult('relationship-result', 
+                        `<strong>❌ API Error:</strong><br>${data.message || 'Unknown error'}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('relationship-result', 
+                    `<strong>❌ CORS/Network Error:</strong><br>${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Auto-run health check on page load
+        window.addEventListener('load', () => {
+            setTimeout(testHealthCheck, 1000);
+        });
+    </script>
+</body>
+</html>
