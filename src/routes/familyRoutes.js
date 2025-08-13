@@ -5,7 +5,9 @@ const {
   getAllFamilyMembers,
   removeFamilyMember,
   getRelationshipTypes,
-  getRelationshipStats
+  getRelationshipStats,
+  rebuildFamilyRelationships,
+  updateUserParents
 } = require('../controllers/familyController');
 const { authenticateToken } = require('../middleware/auth');
 const { validateFamilyMember } = require('../middleware/validation');
@@ -372,5 +374,75 @@ router.get('/relationship-types', getRelationshipTypes);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/stats', getRelationshipStats);
+
+/**
+ * @swagger
+ * /family/rebuild-relationships:
+ *   post:
+ *     summary: Rebuild all family relationships
+ *     description: Rebuilds all family relationships to ensure completeness. This fixes any missing relationships in the family tree by recalculating all connections between family members.
+ *     tags: [Family Tree]
+ *     responses:
+ *       200:
+ *         description: Family relationships rebuilt successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "Family relationships rebuilt successfully"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/rebuild-relationships', rebuildFamilyRelationships);
+
+/**
+ * @swagger
+ * /family/update-parents:
+ *   post:
+ *     summary: Update user parent relationships
+ *     description: Updates a user's parent relationships and rebuilds family tree
+ *     tags: [Family Tree]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *                 example: 9
+ *               fatherId:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 1
+ *               motherId:
+ *                 type: integer
+ *                 nullable: true
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Parent relationships updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "User parent relationships updated successfully"
+ */
+router.post('/update-parents', updateUserParents);
 
 module.exports = router;

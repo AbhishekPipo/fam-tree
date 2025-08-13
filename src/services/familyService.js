@@ -137,12 +137,15 @@ class FamilyService {
         transaction
       );
 
+      // Rebuild all family relationships to ensure completeness
+      await this._rebuildAllFamilyRelationships(transaction);
+
       await transaction.commit();
 
       // Fetch the created user with relationships
       const createdUser = await User.findByPk(newUser.id, {
         include: [
-          { model: User, as: 'father', attributes: ['id', 'firstName', 'lastName'] },
+          { model: User, as:'father', attributes: ['id', 'firstName', 'lastName'] },
           { model: User, as: 'mother', attributes: ['id', 'firstName', 'lastName'] }
         ]
       });
@@ -211,19 +214,19 @@ class FamilyService {
   }
 
   /**
-   * Categorize relationships into ancestors, descendants, and adjacent
+   * Categorize relationships into ancestors, descendants, and adjacent with proper tree structure
    * @private
    * @param {Array} directRelationships - Direct relationships
    * @param {Array} indirectRelationships - Indirect relationships
    * @param {Object} currentUser - Current user object
-   * @returns {Object} - Categorized relationships
+   * @returns {Object} - Categorized relationships with tree structure
    */
   async _categorizeRelationships(directRelationships, indirectRelationships, currentUser) {
     const ancestors = [];
     const descendants = [];
     const adjacent = [];
 
-    // Process direct relationships
+    // Process direct relationships (spouses/partners)
     directRelationships.forEach(relationship => {
       // Get the correct relationship type from the related user's perspective
       let correctRelationshipType = relationship.relationshipType;
@@ -243,7 +246,13 @@ class FamilyService {
       });
     });
 
-    // Process indirect relationships
+    // Group indirect relationships by their actual parent connections for proper tree structure
+    const relationshipsByParent = new Map();
+    const directDescendants = [];
+    const directAncestors = [];
+    const siblings = [];
+
+    // First pass: categorize relationships and group by parent connections
     indirectRelationships.forEach(relationship => {
       const relationshipData = {
         user: relationship.relatedUser,
@@ -251,33 +260,90 @@ class FamilyService {
         level: relationship.relationshipLevel
       };
 
-      // Add parent connection info for grandchildren and beyond
-      if (relationship.relationshipLevel <= -2) {
-        const parentInfo = this._getParentConnectionInfo(relationship.relatedUser, currentUser.id);
-        if (parentInfo) {
-          relationshipData.parentInfo = parentInfo;
+      if (relationship.relationshipLevel > 0) {
+        // Ancestors (parents, grandparents, etc.)
+        directAncestors.push(relationshipData);
+      } else if (relationship.relationshipLevel < 0) {
+        // Check if this is a direct descendant or extended family descendant
+        const user = relationship.relatedUser;
+        const isDirectDescendant = (user.fatherId === currentUser.id || user.motherId === currentUser.id);
+        
+        if (isDirectDescendant) {
+          // Direct children/grandchildren
+          directDescendants.push(relationshipData);
+        } else {
+          // Extended family descendants (like cousin's children) - group by their parent
+          const parentId = user.fatherId || user.motherId;
+          if (parentId) {
+            if (!relationshipsByParent.has(parentId)) {
+              relationshipsByParent.set(parentId, []);
+            }
+            relationshipsByParent.get(parentId).push(relationshipData);
+          }
+        }
+      } else {
+        // Level 0 relationships (siblings, cousins)
+        if (['brother', 'sister', 'half-brother', 'half-sister'].includes(relationship.relationshipType)) {
+          siblings.push(relationshipData);
+        } else if (relationship.relationshipType === 'cousin') {
+          // Group cousins by their parent (uncle/aunt)
+          const user = relationship.relatedUser;
+          const parentId = user.fatherId || user.motherId;
+          if (parentId) {
+            if (!relationshipsByParent.has(parentId)) {
+              relationshipsByParent.set(parentId, []);
+            }
+            relationshipsByParent.get(parentId).push(relationshipData);
+          }
+        } else {
+          adjacent.push(relationshipData);
         }
       }
-
-      if (relationship.relationshipLevel > 0) {
-        ancestors.push(relationshipData);
-      } else if (relationship.relationshipLevel < 0) {
-        descendants.push(relationshipData);
-      } else {
-        // Level 0 relationships like siblings
-        adjacent.push(relationshipData);
-      }
     });
+
+    // Add direct descendants with parent connection info for grandchildren and beyond
+    directDescendants.forEach(relationship => {
+      if (relationship.level <= -2) {
+        const parentInfo = this._getParentConnectionInfo(relationship.user, currentUser.id);
+        if (parentInfo) {
+          relationship.parentInfo = parentInfo;
+        }
+      }
+      descendants.push(relationship);
+    });
+
+    // Add direct ancestors
+    ancestors.push(...directAncestors);
+
+    // Add siblings to adjacent
+    adjacent.push(...siblings);
+
+    // Process extended family members and attach them to their parents in the tree
+    for (let ancestor of ancestors) {
+      const ancestorChildren = relationshipsByParent.get(ancestor.user.id);
+      if (ancestorChildren) {
+        ancestor.children = ancestorChildren;
+      }
+    }
+
+    // Process siblings and attach their children
+    for (let sibling of siblings) {
+      const siblingChildren = relationshipsByParent.get(sibling.user.id);
+      if (siblingChildren) {
+        sibling.children = siblingChildren;
+      }
+    }
 
     // Sort relationships
     ancestors.sort((a, b) => b.level - a.level); // Descending order (closest first)
     descendants.sort((a, b) => a.level - b.level); // Ascending order (closest first)
 
-    // Add direct relationship information for ancestors
-    for (let ancestor of ancestors) {
-      const directRels = await this._getDirectRelationshipsForUser(ancestor.user.id);
+    // Add direct relationship information (spouses) for all family members
+    const allFamilyMembers = [...ancestors, ...adjacent, ...descendants];
+    for (let member of allFamilyMembers) {
+      const directRels = await this._getDirectRelationshipsForUser(member.user.id);
       if (directRels.length > 0) {
-        ancestor.directRelationships = directRels.map(rel => ({
+        member.directRelationships = directRels.map(rel => ({
           partner: {
             id: rel.relatedUser.id,
             firstName: rel.relatedUser.firstName,
@@ -286,6 +352,24 @@ class FamilyService {
           },
           relationshipType: rel.relationshipType
         }));
+      }
+
+      // Also add spouse info to children if they exist
+      if (member.children) {
+        for (let child of member.children) {
+          const childDirectRels = await this._getDirectRelationshipsForUser(child.user.id);
+          if (childDirectRels.length > 0) {
+            child.directRelationships = childDirectRels.map(rel => ({
+              partner: {
+                id: rel.relatedUser.id,
+                firstName: rel.relatedUser.firstName,
+                lastName: rel.relatedUser.lastName,
+                gender: rel.relatedUser.gender
+              },
+              relationshipType: rel.relationshipType
+            }));
+          }
+        }
       }
     }
 
@@ -675,6 +759,163 @@ class FamilyService {
   }
 
   /**
+   * Rebuild all family relationships to ensure completeness
+   * This method ensures that all family members have proper relationships with each other
+   * @param {Object} transaction - Database transaction
+   */
+  async _rebuildAllFamilyRelationships(transaction) {
+    // Get all users
+    const allUsers = await User.findAll({ transaction });
+    
+    // Clear all indirect relationships to rebuild them
+    await IndirectRelationship.destroy({ where: {}, transaction });
+    
+    // For each user, calculate their relationships with all other users
+    for (const user of allUsers) {
+      await this._calculateUserRelationships(user.id, allUsers, transaction);
+    }
+  }
+
+  /**
+   * Calculate relationships for a specific user with all other users
+   * @param {number} userId - User ID to calculate relationships for
+   * @param {Array} allUsers - Array of all users
+   * @param {Object} transaction - Database transaction
+   */
+  async _calculateUserRelationships(userId, allUsers, transaction) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    // Get direct relationships for this user
+    const directRelationships = await DirectRelationship.findAll({
+      where: { userId },
+      transaction
+    });
+
+    // Skip if user has direct relationships (spouses) - they're handled separately
+    const directRelatedUserIds = directRelationships.map(rel => rel.relatedUserId);
+
+    for (const otherUser of allUsers) {
+      if (otherUser.id === userId) continue; // Skip self
+      if (directRelatedUserIds.includes(otherUser.id)) continue; // Skip direct relationships
+
+      const relationship = await this._calculateRelationshipBetweenUsers(user, otherUser, allUsers);
+      
+      if (relationship) {
+        // Create the relationship
+        await IndirectRelationship.create({
+          userId: user.id,
+          relatedUserId: otherUser.id,
+          relationshipType: relationship.type,
+          relationshipLevel: relationship.level
+        }, { transaction });
+      }
+    }
+  }
+
+  /**
+   * Calculate the relationship between two users
+   * @param {Object} user1 - First user
+   * @param {Object} user2 - Second user  
+   * @param {Array} allUsers - Array of all users for reference
+   * @returns {Object|null} - Relationship object or null if no relationship
+   */
+  async _calculateRelationshipBetweenUsers(user1, user2, allUsers) {
+    // Direct parent-child relationships
+    if (user1.fatherId === user2.id) {
+      return { type: 'father', level: 1 };
+    }
+    if (user1.motherId === user2.id) {
+      return { type: 'mother', level: 1 };
+    }
+    if (user2.fatherId === user1.id) {
+      return { type: user2.gender === 'male' ? 'son' : 'daughter', level: -1 };
+    }
+    if (user2.motherId === user1.id) {
+      return { type: user2.gender === 'male' ? 'son' : 'daughter', level: -1 };
+    }
+
+    // Sibling relationships (same parents)
+    const sharesFather = user1.fatherId && user2.fatherId && user1.fatherId === user2.fatherId;
+    const sharesMother = user1.motherId && user2.motherId && user1.motherId === user2.motherId;
+    
+    if (sharesFather || sharesMother) {
+      if (sharesFather && sharesMother) {
+        // Full siblings
+        return { type: user2.gender === 'male' ? 'brother' : 'sister', level: 0 };
+      } else {
+        // Half siblings
+        return { type: user2.gender === 'male' ? 'half-brother' : 'half-sister', level: 0 };
+      }
+    }
+
+    // Grandparent-grandchild relationships
+    const user1Parents = allUsers.filter(u => u.id === user1.fatherId || u.id === user1.motherId);
+    const user2Parents = allUsers.filter(u => u.id === user2.fatherId || u.id === user2.motherId);
+
+    // Check if user2 is grandparent of user1
+    for (const parent of user1Parents) {
+      if (parent.fatherId === user2.id) {
+        return { type: user2.gender === 'male' ? 'grandfather' : 'grandmother', level: 2 };
+      }
+      if (parent.motherId === user2.id) {
+        return { type: user2.gender === 'male' ? 'grandfather' : 'grandmother', level: 2 };
+      }
+    }
+
+    // Check if user1 is grandparent of user2
+    for (const parent of user2Parents) {
+      if (parent.fatherId === user1.id) {
+        return { type: user2.gender === 'male' ? 'grandson' : 'granddaughter', level: -2 };
+      }
+      if (parent.motherId === user1.id) {
+        return { type: user2.gender === 'male' ? 'grandson' : 'granddaughter', level: -2 };
+      }
+    }
+
+    // Uncle/Aunt - Nephew/Niece relationships
+    for (const parent of user1Parents) {
+      // Check if user2 is sibling of user1's parent (uncle/aunt)
+      const parentSharesFatherWithUser2 = parent.fatherId && user2.fatherId && parent.fatherId === user2.fatherId;
+      const parentSharesMotherWithUser2 = parent.motherId && user2.motherId && parent.motherId === user2.motherId;
+      
+      if (parentSharesFatherWithUser2 || parentSharesMotherWithUser2) {
+        return { type: user2.gender === 'male' ? 'uncle' : 'aunt', level: 1 };
+      }
+    }
+
+    // Check if user2 is nephew/niece of user1 (user2's parent is sibling of user1's parent)
+    for (const user2Parent of user2Parents) {
+      for (const user1Parent of user1Parents) {
+        const parentsAreSiblings = (user2Parent.fatherId && user1Parent.fatherId && user2Parent.fatherId === user1Parent.fatherId) ||
+                                  (user2Parent.motherId && user1Parent.motherId && user2Parent.motherId === user1Parent.motherId);
+        
+        if (parentsAreSiblings) {
+          return { type: user2.gender === 'male' ? 'nephew' : 'niece', level: -1 };
+        }
+      }
+    }
+
+    // Cousin relationships (children of siblings)
+    for (const user1Parent of user1Parents) {
+      for (const user2Parent of user2Parents) {
+        // Check if parents are siblings
+        const parentsShareFather = user1Parent.fatherId && user2Parent.fatherId && user1Parent.fatherId === user2Parent.fatherId;
+        const parentsShareMother = user1Parent.motherId && user2Parent.motherId && user1Parent.motherId === user2Parent.motherId;
+        
+        if (parentsShareFather || parentsShareMother) {
+          return { type: 'cousin', level: 0 };
+        }
+      }
+    }
+
+    // In-law relationships through spouses
+    // This would require checking direct relationships, but for now we'll handle basic family tree
+    
+    return null; // No relationship found
+  }
+
+  /**
    * Add spouse information to a single user
    * @private
    * @param {Object} user - User object
@@ -722,10 +963,75 @@ class FamilyService {
         relationshipWithSpouse.user.spouseId = spouseRelationship.relatedUserId;
       }
       
+      // Handle children if they exist (for tree structure)
+      if (relationship.children) {
+        relationshipWithSpouse.children = [];
+        for (const child of relationship.children) {
+          const childWithSpouse = { ...child };
+          
+          // Get spouse info for child
+          const childDirectRelationships = await this._getDirectRelationshipsForUser(child.user.id);
+          const childSpouseRelationship = childDirectRelationships.find(rel => 
+            ['husband', 'wife', 'partner'].includes(rel.relationshipType)
+          );
+          
+          childWithSpouse.user = child.user.toJSON ? { ...child.user.toJSON() } : { ...child.user };
+          if (childSpouseRelationship) {
+            childWithSpouse.user.spouseId = childSpouseRelationship.relatedUserId;
+          }
+          
+          relationshipWithSpouse.children.push(childWithSpouse);
+        }
+      }
+      
       relationshipsWithSpouse.push(relationshipWithSpouse);
     }
     
     return relationshipsWithSpouse;
+  }
+
+  /**
+   * Manually rebuild all family relationships
+   * This can be called to fix any missing relationships in the family tree
+   */
+  async rebuildFamilyRelationships() {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      await this._rebuildAllFamilyRelationships(transaction);
+      await transaction.commit();
+      
+      return { message: 'Family relationships rebuilt successfully' };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * Update a user's parent relationships
+   * @param {number} userId - User ID to update
+   * @param {number|null} fatherId - Father's user ID
+   * @param {number|null} motherId - Mother's user ID
+   */
+  async updateUserParents(userId, fatherId, motherId) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      await User.update(
+        { fatherId, motherId },
+        { where: { id: userId }, transaction }
+      );
+      
+      // Rebuild relationships after updating parents
+      await this._rebuildAllFamilyRelationships(transaction);
+      await transaction.commit();
+      
+      return { message: 'User parent relationships updated successfully' };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }
 

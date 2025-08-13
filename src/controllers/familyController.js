@@ -74,11 +74,34 @@ const getRelationshipStats = catchAsync(async (req, res) => {
   });
 });
 
+// Rebuild all family relationships
+const rebuildFamilyRelationships = catchAsync(async (req, res) => {
+  const result = await familyService.rebuildFamilyRelationships();
+
+  res.json({
+    success: true,
+    message: result.message
+  });
+});
+
+// Update user parent relationships
+const updateUserParents = catchAsync(async (req, res) => {
+  const { userId, fatherId, motherId } = req.body;
+  const result = await familyService.updateUserParents(userId, fatherId, motherId);
+
+  res.json({
+    success: true,
+    message: result.message
+  });
+});
+
 module.exports = {
   getFamilyTree,
   addFamilyMember,
   getAllFamilyMembers,
   removeFamilyMember,
   getRelationshipTypes,
-  getRelationshipStats
+  getRelationshipStats,
+  rebuildFamilyRelationships,
+  updateUserParents
 };
