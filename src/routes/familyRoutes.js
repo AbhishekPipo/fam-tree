@@ -77,6 +77,95 @@ router.get('/tree', getFamilyTree);
 
 /**
  * @swagger
+ * /family/tree/extended:
+ *   get:
+ *     summary: Get extended family tree including in-laws
+ *     description: Retrieves the complete family tree including in-law relationships when includeInLaws=true
+ *     tags: [Family Tree]
+ *     parameters:
+ *       - in: query
+ *         name: includeInLaws
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: Whether to include in-law family trees
+ *     responses:
+ *       200:
+ *         description: Extended family tree retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       allOf:
+ *                         - $ref: '#/components/schemas/FamilyTree'
+ *                         - type: object
+ *                           properties:
+ *                             inLaws:
+ *                               type: array
+ *                               items:
+ *                                 $ref: '#/components/schemas/FamilyTree'
+ *                             extendedInLaws:
+ *                               type: array
+ *                               items:
+ *                                 type: object
+ *                                 properties:
+ *                                   throughMember:
+ *                                     $ref: '#/components/schemas/User'
+ *                                   inLawTree:
+ *                                     $ref: '#/components/schemas/FamilyTree'
+ *                                   relationship:
+ *                                     type: string
+ *                             context:
+ *                               type: string
+ *                               enum: [primary, extended]
+ */
+router.get('/tree/extended', require('../controllers/familyController').getExtendedFamilyTree);
+
+/**
+ * @swagger
+ * /family/tree/in-laws/{spouseId}:
+ *   get:
+ *     summary: Get spouse's family tree (in-laws)
+ *     description: Retrieves the family tree of a spouse showing in-law relationships
+ *     tags: [Family Tree]
+ *     parameters:
+ *       - in: path
+ *         name: spouseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the spouse whose family tree to retrieve
+ *     responses:
+ *       200:
+ *         description: In-law family tree retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       allOf:
+ *                         - $ref: '#/components/schemas/FamilyTree'
+ *                         - type: object
+ *                           properties:
+ *                             context:
+ *                               type: string
+ *                               enum: [in-laws]
+ *                             spouseId:
+ *                               type: integer
+ *                             primaryUserId:
+ *                               type: integer
+ */
+router.get('/tree/in-laws/:spouseId', require('../controllers/familyController').getSpouseFamilyTree);
+
+/**
+ * @swagger
  * /family/members:
  *   get:
  *     summary: Get all family members
@@ -175,6 +264,74 @@ router.get('/members', getAllFamilyMembers);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/member', validateFamilyMember, addFamilyMember);
+
+/**
+ * @swagger
+ * /family/spouse:
+ *   post:
+ *     summary: Add a spouse
+ *     description: Creates a new spouse and establishes marriage relationship
+ *     tags: [Family Tree]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - gender
+ *               - dateOfBirth
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: "Jane"
+ *               middleName:
+ *                 type: string
+ *                 example: "Marie"
+ *               lastName:
+ *                 type: string
+ *                 example: "Smith"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "jane.smith@family.com"
+ *               gender:
+ *                 type: string
+ *                 enum: [male, female]
+ *                 example: "female"
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "1980-05-15"
+ *               location:
+ *                 type: string
+ *                 example: "New York, USA"
+ *     responses:
+ *       201:
+ *         description: Spouse added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         spouse:
+ *                           $ref: '#/components/schemas/User'
+ *                         relationship:
+ *                           type: string
+ *                           example: "wife"
+ *                         message:
+ *                           type: string
+ *                           example: "Spouse added successfully"
+ */
+router.post('/spouse', require('../controllers/familyController').addSpouse);
 
 /**
  * @swagger

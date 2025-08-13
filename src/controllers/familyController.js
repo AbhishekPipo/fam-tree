@@ -95,6 +95,38 @@ const updateUserParents = catchAsync(async (req, res) => {
   });
 });
 
+// Get extended family tree including in-laws
+const getExtendedFamilyTree = catchAsync(async (req, res) => {
+  const includeInLaws = req.query.includeInLaws === 'true';
+  const familyTreeData = await familyService.getExtendedFamilyTree(req.user.id, includeInLaws);
+
+  res.json({
+    success: true,
+    data: familyTreeData
+  });
+});
+
+// Get spouse's family tree (in-laws)
+const getSpouseFamilyTree = catchAsync(async (req, res) => {
+  const { spouseId } = req.params;
+  const inLawTreeData = await familyService.getSpouseFamilyTree(parseInt(spouseId), req.user.id);
+
+  res.json({
+    success: true,
+    data: inLawTreeData
+  });
+});
+
+// Add a spouse
+const addSpouse = catchAsync(async (req, res) => {
+  const result = await familyService.addSpouse(req.body, req.user.id);
+
+  res.status(201).json({
+    success: true,
+    data: result
+  });
+});
+
 module.exports = {
   getFamilyTree,
   addFamilyMember,
@@ -103,5 +135,8 @@ module.exports = {
   getRelationshipTypes,
   getRelationshipStats,
   rebuildFamilyRelationships,
-  updateUserParents
+  updateUserParents,
+  getExtendedFamilyTree,
+  getSpouseFamilyTree,
+  addSpouse
 };

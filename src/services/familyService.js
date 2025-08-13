@@ -55,6 +55,63 @@ class FamilyService {
   }
 
   /**
+   * Get spouse's family tree (in-laws)
+   * @param {number} spouseId - Spouse's user ID
+   * @param {number} currentUserId - Current user ID (for context)
+   * @returns {Object} - Spouse's family tree with in-law relationships
+   */
+  async getSpouseFamilyTree(spouseId, currentUserId) {
+    // Get spouse's family tree from their perspective
+    const spouseFamilyTree = await this.getFamilyTree(spouseId);
+    
+    // Convert relationships to in-law relationships from current user's perspective
+    const inLawTree = await this._convertToInLawRelationships(spouseFamilyTree, currentUserId, spouseId);
+    
+    return {
+      ...inLawTree,
+      context: 'in-laws',
+      spouseId: spouseId,
+      primaryUserId: currentUserId
+    };
+  }
+
+  /**
+   * Get extended family tree including in-laws
+   * @param {number} userId - User ID
+   * @param {boolean} includeInLaws - Whether to include in-law families
+   * @returns {Object} - Extended family tree data
+   */
+  async getExtendedFamilyTree(userId, includeInLaws = false) {
+    // Get primary family tree
+    const primaryTree = await this.getFamilyTree(userId);
+    
+    if (!includeInLaws) {
+      return primaryTree;
+    }
+
+    // Get spouse's family tree if married
+    const spouses = primaryTree.adjacent.filter(adj => 
+      ['husband', 'wife', 'partner'].includes(adj.relationship)
+    );
+
+    const inLawTrees = [];
+    for (const spouse of spouses) {
+      const inLawTree = await this.getSpouseFamilyTree(spouse.user.id, userId);
+      inLawTrees.push(inLawTree);
+    }
+
+    // Also get in-law trees for extended family members who are married
+    const extendedInLaws = await this._getExtendedInLaws(primaryTree, userId);
+
+    return {
+      ...primaryTree,
+      inLaws: inLawTrees,
+      extendedInLaws: extendedInLaws,
+      context: 'extended'
+    };
+  }
+
+  /**
    * Add a new family member
    * @param {Object} memberData - New member data
    * @param {number} currentUserId - Current user ID
@@ -1002,6 +1059,151 @@ class FamilyService {
       await transaction.commit();
       
       return { message: 'Family relationships rebuilt successfully' };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
+   * Convert spouse's family relationships to in-law relationships
+   * @private
+   * @param {Object} spouseFamilyTree - Spouse's family tree
+   * @param {number} currentUserId - Current user ID
+   * @param {number} spouseId - Spouse ID
+   * @returns {Object} - Converted in-law relationships
+   */
+  async _convertToInLawRelationships(spouseFamilyTree, currentUserId, spouseId) {
+    const inLawRelationshipMap = {
+      'father': 'father-in-law',
+      'mother': 'mother-in-law',
+      'brother': 'brother-in-law',
+      'sister': 'sister-in-law',
+      'son': 'son-in-law',
+      'daughter': 'daughter-in-law',
+      'grandfather': 'grandfather-in-law',
+      'grandmother': 'grandmother-in-law',
+      'uncle': 'uncle-in-law',
+      'aunt': 'aunt-in-law',
+      'nephew': 'nephew-in-law',
+      'niece': 'niece-in-law',
+      'cousin': 'cousin-in-law'
+    };
+
+    const convertRelationships = (relationships) => {
+      return relationships.map(rel => ({
+        ...rel,
+        relationship: inLawRelationshipMap[rel.relationship] || rel.relationship + '-in-law',
+        isInLaw: true,
+        throughSpouse: spouseId,
+        children: rel.children ? convertRelationships(rel.children) : undefined
+      }));
+    };
+
+    return {
+      currentUser: {
+        ...spouseFamilyTree.currentUser,
+        relationshipToUser: 'spouse',
+        isSpouse: true
+      },
+      ancestors: convertRelationships(spouseFamilyTree.ancestors),
+      descendants: convertRelationships(spouseFamilyTree.descendants),
+      adjacent: convertRelationships(spouseFamilyTree.adjacent.filter(adj => 
+        !['husband', 'wife', 'partner'].includes(adj.relationship)
+      )),
+      totalMembers: spouseFamilyTree.totalMembers
+    };
+  }
+
+  /**
+   * Get extended in-laws for family members who are married
+   * @private
+   * @param {Object} primaryTree - Primary family tree
+   * @param {number} userId - Current user ID
+   * @returns {Array} - Extended in-law relationships
+   */
+  async _getExtendedInLaws(primaryTree, userId) {
+    const extendedInLaws = [];
+    
+    // Check ancestors with spouses
+    for (const ancestor of primaryTree.ancestors) {
+      if (ancestor.children) {
+        for (const child of ancestor.children) {
+          if (child.directRelationships && child.directRelationships.length > 0) {
+            const spouseId = child.directRelationships[0].partner.id;
+            const inLawTree = await this.getSpouseFamilyTree(spouseId, userId);
+            extendedInLaws.push({
+              throughMember: child.user,
+              inLawTree: inLawTree,
+              relationship: `${child.relationship}'s spouse's family`
+            });
+          }
+        }
+      }
+    }
+
+    // Check adjacent members with children who have spouses
+    for (const adjacent of primaryTree.adjacent) {
+      if (adjacent.children) {
+        for (const child of adjacent.children) {
+          if (child.directRelationships && child.directRelationships.length > 0) {
+            const spouseId = child.directRelationships[0].partner.id;
+            const inLawTree = await this.getSpouseFamilyTree(spouseId, userId);
+            extendedInLaws.push({
+              throughMember: child.user,
+              inLawTree: inLawTree,
+              relationship: `${child.relationship}'s spouse's family`
+            });
+          }
+        }
+      }
+    }
+
+    return extendedInLaws;
+  }
+
+  /**
+   * Add spouse and create marriage relationship
+   * @param {Object} spouseData - Spouse data
+   * @param {number} currentUserId - Current user ID
+   * @returns {Object} - Created spouse and relationship
+   */
+  async addSpouse(spouseData, currentUserId) {
+    const transaction = await sequelize.transaction();
+    
+    try {
+      // Get current user to determine relationship type
+      const currentUser = await User.findByPk(currentUserId, { transaction });
+      
+      // Create spouse user
+      const spouse = await User.create({
+        ...spouseData,
+        password: 'TempPassword123!' // Temporary password
+      }, { transaction });
+
+      // Determine relationship types
+      const currentUserRelType = currentUser.gender === 'male' ? 'husband' : 'wife';
+      const spouseRelType = spouse.gender === 'male' ? 'husband' : 'wife';
+
+      // Create bidirectional marriage relationship
+      await DirectRelationship.createBidirectional(
+        currentUserId,
+        spouse.id,
+        currentUserRelType,
+        spouseRelType,
+        transaction
+      );
+
+      // Rebuild family relationships to include new spouse
+      await this._rebuildAllFamilyRelationships(transaction);
+      
+      await transaction.commit();
+      
+      return {
+        spouse: spouse,
+        relationship: spouseRelType,
+        message: 'Spouse added successfully'
+      };
     } catch (error) {
       await transaction.rollback();
       throw error;

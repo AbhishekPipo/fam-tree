@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex Family Tree with In-Laws</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .tree-section {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tree-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .family-tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+            overflow-x: auto;
+            min-width: 1200px;
+        }
+
+        .tree-level {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 60px;
+            position: relative;
+            width: 100%;
+        }
+
+        .person-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .person-card {
+            width: 110px;
+            height: 130px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .person-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .person-card.current-user {
+            border-color: #4CAF50;
+            background: #f8fff8;
+            font-weight: bold;
+        }
+
+        .person-card.spouse {
+            border-color: #FF6B6B;
+            background: #fff8f8;
+        }
+
+        .person-card.ancestor {
+            border-color: #2196F3;
+            background: #f8f9ff;
+        }
+
+        .person-card.descendant {
+            border-color: #FF9800;
+            background: #fffaf8;
+        }
+
+        .person-card.in-law {
+            border-color: #9C27B0;
+            background: #faf8ff;
+            border-style: dashed;
+        }
+
+        .person-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .person-relationship {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .person-level {
+            font-size: 9px;
+            color: #999;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-online {
+            background: #4CAF50;
+        }
+
+        .status-offline {
+            background: #999;
+        }
+
+        .marriage-line {
+            width: 50px;
+            height: 2px;
+            background: #FF6B6B;
+            margin-top: 65px;
+        }
+
+        .children-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 30px;
+            position: relative;
+        }
+
+        .children-container::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 15px;
+            background: #333;
+        }
+
+        .level-label {
+            position: absolute;
+            left: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #666;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 11px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 2px solid;
+        }
+
+        .in-law-section {
+            border: 2px dashed #9C27B0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #faf8ff;
+        }
+
+        .connection-note {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        .expandable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .expandable::after {
+            content: '👁️';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 10px;
+        }
+
+        .tree-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tree-controls button {
+            margin: 0 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #2196F3;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .tree-controls button:hover {
+            background: #1976D2;
+        }
+
+        .tree-controls button.active {
+            background: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="tree-section">
+            <div class="tree-title">
+                <h1>Prashanth's Family Tree</h1>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="border-color: #4CAF50; background: #f8fff8;"></div>
+                        <span>Current User</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="border-color: #2196F3; background: #f8f9ff;"></div>
+                        <span>Ancestors</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="border-color: #FF6B6B; background: #fff8f8;"></div>
+                        <span>Spouse</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="border-color: #FF9800; background: #fffaf8;"></div>
+                        <span>Descendants</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="border-color: #9C27B0; background: #faf8ff; border-style: dashed;"></div>
+                        <span>In-Laws</span>
+                    </div>
+                </div>
+                
+                <div class="tree-controls">
+                    <button id="primaryView" class="active">Primary Tree</button>
+                    <button id="extendedView">Extended with In-Laws</button>
+                    <button id="inLawView">Meera's Family (In-Laws)</button>
+                </div>
+            </div>
+
+            <!-- Primary Family Tree -->
+            <div id="primaryTree" class="family-tree">
+                <!-- Level 2: Grandparents -->
+                <div class="tree-level">
+                    <div class="level-label">Grandparents</div>
+                    <div class="person-group">
+                        <div class="person-card ancestor">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Grandfather</div>
+                            <div class="person-relationship">Grandfather</div>
+                            <div class="person-level">(Level 2)</div>
+                        </div>
+                    </div>
+                    <div class="marriage-line"></div>
+                    <div class="person-group">
+                        <div class="person-card ancestor">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Grandmother</div>
+                            <div class="person-relationship">Grandmother</div>
+                            <div class="person-level">(Level 2)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 1: Parents & Uncles -->
+                <div class="tree-level">
+                    <div class="level-label">Parents</div>
+                    <div class="person-group">
+                        <div class="person-card ancestor">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Ramesh</div>
+                            <div class="person-relationship">Father</div>
+                            <div class="person-level">(Level 1)</div>
+                        </div>
+                    </div>
+                    <div class="marriage-line"></div>
+                    <div class="person-group">
+                        <div class="person-card ancestor">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Mallika</div>
+                            <div class="person-relationship">Mother</div>
+                            <div class="person-level">(Level 1)</div>
+                        </div>
+                    </div>
+                    <div class="person-group" style="margin-left: 80px;">
+                        <div class="person-card ancestor">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Suresh</div>
+                            <div class="person-relationship">Uncle</div>
+                            <div class="person-level">(Level 1)</div>
+                        </div>
+                        <!-- Suresh's children -->
+                        <div class="children-container">
+                            <div class="person-group">
+                                <div class="person-card expandable" data-spouse="meera">
+                                    <div class="status-indicator status-online"></div>
+                                    <div class="person-name">Amit</div>
+                                    <div class="person-relationship">Cousin</div>
+                                    <div class="person-level">(Level 0)</div>
+                                </div>
+                                <div class="marriage-line"></div>
+                                <div class="person-card spouse">
+                                    <div class="status-indicator status-online"></div>
+                                    <div class="person-name">Meera</div>
+                                    <div class="person-relationship">Cousin's Wife</div>
+                                    <div class="person-level">(Level 0)</div>
+                                </div>
+                                <!-- Amit & Meera's children -->
+                                <div class="children-container">
+                                    <div class="person-card descendant">
+                                        <div class="status-indicator status-offline"></div>
+                                        <div class="person-name">Aarav</div>
+                                        <div class="person-relationship">Cousin's Son</div>
+                                        <div class="person-level">(Level -1)</div>
+                                    </div>
+                                    <div class="person-card descendant">
+                                        <div class="status-indicator status-offline"></div>
+                                        <div class="person-name">Kavya</div>
+                                        <div class="person-relationship">Cousin's Daughter</div>
+                                        <div class="person-level">(Level -1)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="person-card">
+                                <div class="status-indicator status-offline"></div>
+                                <div class="person-name">Priya</div>
+                                <div class="person-relationship">Cousin</div>
+                                <div class="person-level">(Level 0)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 0: Current User -->
+                <div class="tree-level">
+                    <div class="level-label">Current</div>
+                    <div class="person-group">
+                        <div class="person-card current-user">
+                            <div class="status-indicator status-online"></div>
+                            <div class="person-name">Prashanth</div>
+                            <div class="person-relationship">ME</div>
+                            <div class="person-level">(Level 0)</div>
+                        </div>
+                    </div>
+                    <div class="marriage-line"></div>
+                    <div class="person-group">
+                        <div class="person-card spouse">
+                            <div class="status-indicator status-online"></div>
+                            <div class="person-name">Anjali</div>
+                            <div class="person-relationship">Wife</div>
+                            <div class="person-level">(Level 0)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level -1: Children -->
+                <div class="tree-level">
+                    <div class="level-label">Children</div>
+                    <div class="person-group">
+                        <div class="person-card descendant">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Arjun</div>
+                            <div class="person-relationship">Son</div>
+                            <div class="person-level">(Level -1)</div>
+                        </div>
+                    </div>
+                    <div class="person-group">
+                        <div class="person-card descendant">
+                            <div class="status-indicator status-online"></div>
+                            <div class="person-name">Simran</div>
+                            <div class="person-relationship">Daughter</div>
+                            <div class="person-level">(Level -1)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extended Tree with In-Laws (Hidden by default) -->
+            <div id="extendedTree" class="family-tree" style="display: none;">
+                <div class="connection-note">Extended Family Tree - Including In-Law Families</div>
+                
+                <!-- Same primary tree structure -->
+                <div class="tree-level">
+                    <div class="level-label">Parents</div>
+                    <div class="person-group">
+                        <div class="person-card ancestor">
+                            <div class="person-name">Suresh</div>
+                            <div class="person-relationship">Uncle</div>
+                        </div>
+                        <div class="children-container">
+                            <div class="person-group">
+                                <div class="person-card">
+                                    <div class="person-name">Amit</div>
+                                    <div class="person-relationship">Cousin</div>
+                                </div>
+                                <div class="marriage-line"></div>
+                                <div class="person-card spouse">
+                                    <div class="person-name">Meera</div>
+                                    <div class="person-relationship">Cousin's Wife</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- In-Law Section -->
+                <div class="in-law-section">
+                    <h3 style="text-align: center; color: #9C27B0; margin-bottom: 20px;">
+                        Meera's Family (Through Amit)
+                    </h3>
+                    <div class="tree-level">
+                        <div class="person-group">
+                            <div class="person-card in-law">
+                                <div class="status-indicator status-offline"></div>
+                                <div class="person-name">Rajesh</div>
+                                <div class="person-relationship">Father-in-law</div>
+                                <div class="person-level">(Through Amit)</div>
+                            </div>
+                        </div>
+                        <div class="marriage-line"></div>
+                        <div class="person-group">
+                            <div class="person-card in-law">
+                                <div class="status-indicator status-offline"></div>
+                                <div class="person-name">Sunita</div>
+                                <div class="person-relationship">Mother-in-law</div>
+                                <div class="person-level">(Through Amit)</div>
+                            </div>
+                        </div>
+                        <div class="person-group" style="margin-left: 60px;">
+                            <div class="person-card in-law">
+                                <div class="status-indicator status-online"></div>
+                                <div class="person-name">Rohit</div>
+                                <div class="person-relationship">Brother-in-law</div>
+                                <div class="person-level">(Through Amit)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meera's Family Tree (In-Law View) -->
+            <div id="inLawTree" class="family-tree" style="display: none;">
+                <div class="connection-note">Meera's Family Tree (In-Law Perspective)</div>
+                
+                <!-- Meera's Parents -->
+                <div class="tree-level">
+                    <div class="level-label">In-Laws</div>
+                    <div class="person-group">
+                        <div class="person-card in-law">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Rajesh</div>
+                            <div class="person-relationship">Father-in-law</div>
+                            <div class="person-level">(Level 1)</div>
+                        </div>
+                    </div>
+                    <div class="marriage-line"></div>
+                    <div class="person-group">
+                        <div class="person-card in-law">
+                            <div class="status-indicator status-offline"></div>
+                            <div class="person-name">Sunita</div>
+                            <div class="person-relationship">Mother-in-law</div>
+                            <div class="person-level">(Level 1)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meera and her siblings -->
+                <div class="tree-level">
+                    <div class="level-label">Spouse</div>
+                    <div class="person-group">
+                        <div class="person-card spouse">
+                            <div class="status-indicator status-online"></div>
+                            <div class="person-name">Meera</div>
+                            <div class="person-relationship">Spouse</div>
+                            <div class="person-level">(Level 0)</div>
+                        </div>
+                    </div>
+                    <div class="person-group" style="margin-left: 80px;">
+                        <div class="person-card in-law">
+                            <div class="status-indicator status-online"></div>
+                            <div class="person-name">Rohit</div>
+                            <div class="person-relationship">Brother-in-law</div>
+                            <div class="person-level">(Level 0)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tree view switching
+        const primaryBtn = document.getElementById('primaryView');
+        const extendedBtn = document.getElementById('extendedView');
+        const inLawBtn = document.getElementById('inLawView');
+        
+        const primaryTree = document.getElementById('primaryTree');
+        const extendedTree = document.getElementById('extendedTree');
+        const inLawTree = document.getElementById('inLawTree');
+
+        function showTree(treeToShow, activeBtn) {
+            // Hide all trees
+            primaryTree.style.display = 'none';
+            extendedTree.style.display = 'none';
+            inLawTree.style.display = 'none';
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tree-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tree and activate button
+            treeToShow.style.display = 'flex';
+            activeBtn.classList.add('active');
+        }
+
+        primaryBtn.addEventListener('click', () => showTree(primaryTree, primaryBtn));
+        extendedBtn.addEventListener('click', () => showTree(extendedTree, extendedBtn));
+        inLawBtn.addEventListener('click', () => showTree(inLawTree, inLawBtn));
+
+        // Person card interactions
+        document.querySelectorAll('.person-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const name = this.querySelector('.person-name').textContent;
+                const relationship = this.querySelector('.person-relationship').textContent;
+                
+                if (this.classList.contains('expandable')) {
+                    alert(`${name} (${relationship}) - Click "Extended with In-Laws" to see their spouse's family tree!`);
+                } else {
+                    alert(`${name} (${relationship})`);
+                }
+            });
+        });
+
+        // Simulate real-time status updates
+        function updateOnlineStatus() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                if (Math.random() > 0.9) {
+                    indicator.className = indicator.className.includes('status-online') 
+                        ? 'status-indicator status-offline' 
+                        : 'status-indicator status-online';
+                }
+            });
+        }
+
+        // Update status every 10 seconds
+        setInterval(updateOnlineStatus, 10000);
+    </script>
+</body>
+</html>
