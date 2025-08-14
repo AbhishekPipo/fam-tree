@@ -32,13 +32,16 @@ const getRelationshipLabel = (level, gender, direction) => {
 };
 
 const getFamilyTree = async (req, res) => {
-  const userId = parseInt(req.params.userId, 10);
-  if (isNaN(userId)) {
-    return res.status(400).json({ success: false, error: 'Invalid user ID' });
+  // Get user ID from JWT token (set by auth middleware)
+  const userAuthId = req.user.id;
+  const userEmail = req.user.email;
+  
+  if (!userAuthId) {
+    return res.status(400).json({ success: false, error: 'User ID not found in token' });
   }
 
   try {
-    const treeData = await familyService.getFamilyTree(userId);
+    const treeData = await familyService.getFamilyTreeByEmail(userEmail);
 
     const response = {
       success: true,

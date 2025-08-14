@@ -47,7 +47,7 @@ const getFamilyTree = async (userId) => {
     // 5. Get Cousins
     const cousinsResult = await session.run(
       `
-      MATCH (currentUser:Person {id: $userId})<--(:FATHER_OF|:MOTHER_OF)--(parent)<--(:FATHER_OF|:MOTHER_OF)--(grandparent)-->(:FATHER_OF|:MOTHER_OF)-->(uncle)-->(:FATHER_OF|:MOTHER_OF)-->(cousin)
+      MATCH (currentUser:Person {id: $userId})<-[:FATHER_OF|MOTHER_OF]-(parent)<-[:FATHER_OF|MOTHER_OF]-(grandparent)-[:FATHER_OF|MOTHER_OF]->(uncle)-[:FATHER_OF|MOTHER_OF]->(cousin)
       WHERE uncle <> parent AND cousin <> currentUser
       RETURN cousin
       `,
@@ -66,4 +66,27 @@ const getFamilyTree = async (userId) => {
   }
 };
 
-module.exports = { getFamilyTree };
+const getFamilyTreeByEmail = async (email) => {
+  const driver = getDriver();
+  const session = driver.session();
+  try {
+    // First, find the Person by email
+    const personResult = await session.run(
+      'MATCH (p:Person {email: $email}) RETURN p.id as personId',
+      { email }
+    );
+
+    if (personResult.records.length === 0) {
+      throw new Error('Person not found with this email');
+    }
+
+    const personId = personResult.records[0].get('personId').toNumber();
+    
+    // Now get the family tree using the Person ID
+    return await getFamilyTree(personId);
+  } finally {
+    await session.close();
+  }
+};
+
+module.exports = { getFamilyTree, getFamilyTreeByEmail };
