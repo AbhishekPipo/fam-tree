@@ -1,0 +1,1602 @@
+{
+  "success": true,
+  "data": {
+    "currentUser": {
+      "id": 38,
+      "firstName": "Prashanth",
+      "middleName": null,
+      "lastName": "Patel",
+      "email": "prashanth@family.com",
+      "dateOfBirth": "1980-05-15",
+      "gender": "male",
+      "location": "Mumbai, Maharashtra, India",
+      "profilePicture": null,
+      "hasMedication": false,
+      "medicationName": null,
+      "medicationFrequency": null,
+      "medicationTime": null,
+      "isOnline": true,
+      "isDeceased": false,
+      "staysWithUser": false,
+      "fatherId": 34,
+      "motherId": 35,
+      "createdAt": "2025-08-13T20:23:25.057Z",
+      "updatedAt": "2025-08-13T20:27:40.913Z",
+      "father": {
+        "id": 34,
+        "firstName": "Ramesh",
+        "lastName": "Patel",
+        "gender": "male"
+      },
+      "mother": {
+        "id": 35,
+        "firstName": "Mallika",
+        "lastName": "Patel",
+        "gender": "female"
+      },
+      "spouseId": 39
+    },
+    "ancestors": [
+      {
+        "user": {
+          "id": 32,
+          "firstName": "Harilal",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "harilal.patel@family.com",
+          "dateOfBirth": "1925-03-15",
+          "gender": "male",
+          "location": "Ahmedabad, Gujarat, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": null,
+          "motherId": null,
+          "createdAt": "2025-08-13T20:23:22.974Z",
+          "updatedAt": "2025-08-13T20:23:22.974Z",
+          "father": null,
+          "mother": null,
+          "spouseId": 33
+        },
+        "relationship": "grandfather",
+        "level": 2,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 33,
+              "firstName": "Savitri",
+              "lastName": "Patel",
+              "gender": "female"
+            },
+            "relationshipType": "husband"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 33,
+          "firstName": "Savitri",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "savitri.patel@family.com",
+          "dateOfBirth": "1930-07-20",
+          "gender": "female",
+          "location": "Ahmedabad, Gujarat, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": null,
+          "motherId": null,
+          "createdAt": "2025-08-13T20:23:23.323Z",
+          "updatedAt": "2025-08-13T20:23:23.323Z",
+          "father": null,
+          "mother": null,
+          "spouseId": 32
+        },
+        "relationship": "grandmother",
+        "level": 2,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 32,
+              "firstName": "Harilal",
+              "lastName": "Patel",
+              "gender": "male"
+            },
+            "relationshipType": "wife"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 34,
+          "firstName": "Ramesh",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "ramesh.patel@family.com",
+          "dateOfBirth": "1955-01-10",
+          "gender": "male",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 32,
+          "motherId": 33,
+          "createdAt": "2025-08-13T20:23:23.673Z",
+          "updatedAt": "2025-08-13T20:23:23.673Z",
+          "father": {
+            "id": 32,
+            "firstName": "Harilal",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 33,
+            "firstName": "Savitri",
+            "lastName": "Patel"
+          },
+          "spouseId": 35
+        },
+        "relationship": "father",
+        "level": 1,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 35,
+              "firstName": "Mallika",
+              "lastName": "Patel",
+              "gender": "female"
+            },
+            "relationshipType": "husband"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 36,
+          "firstName": "Suresh",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "suresh.patel@family.com",
+          "dateOfBirth": "1952-09-05",
+          "gender": "male",
+          "location": "Pune, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 32,
+          "motherId": 33,
+          "createdAt": "2025-08-13T20:23:24.367Z",
+          "updatedAt": "2025-08-13T20:23:24.367Z",
+          "father": {
+            "id": 32,
+            "firstName": "Harilal",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 33,
+            "firstName": "Savitri",
+            "lastName": "Patel"
+          },
+          "spouseId": 37
+        },
+        "relationship": "uncle",
+        "level": 1,
+        "children": [
+          {
+            "user": {
+              "id": 41,
+              "firstName": "Priya",
+              "middleName": null,
+              "lastName": "Patel",
+              "email": "priya.patel@family.com",
+              "dateOfBirth": "1986-02-14",
+              "gender": "female",
+              "location": "Pune, Maharashtra, India",
+              "profilePicture": null,
+              "hasMedication": false,
+              "medicationName": null,
+              "medicationFrequency": null,
+              "medicationTime": null,
+              "isOnline": false,
+              "isDeceased": false,
+              "staysWithUser": false,
+              "fatherId": 36,
+              "motherId": 37,
+              "createdAt": "2025-08-13T20:23:26.092Z",
+              "updatedAt": "2025-08-13T20:23:26.092Z",
+              "father": {
+                "id": 36,
+                "firstName": "Suresh",
+                "lastName": "Patel"
+              },
+              "mother": {
+                "id": 37,
+                "firstName": "Kiran",
+                "lastName": "Patel"
+              },
+              "spouseId": 42
+            },
+            "relationship": "cousin",
+            "level": 0,
+            "directRelationships": [
+              {
+                "partner": {
+                  "id": 42,
+                  "firstName": "Vikram",
+                  "lastName": "Shah",
+                  "gender": "male"
+                },
+                "relationshipType": "wife"
+              }
+            ]
+          },
+          {
+            "user": {
+              "id": 40,
+              "firstName": "Amit",
+              "middleName": null,
+              "lastName": "Patel",
+              "email": "amit@family.com",
+              "dateOfBirth": "1983-11-25",
+              "gender": "male",
+              "location": "Pune, Maharashtra, India",
+              "profilePicture": null,
+              "hasMedication": false,
+              "medicationName": null,
+              "medicationFrequency": null,
+              "medicationTime": null,
+              "isOnline": false,
+              "isDeceased": false,
+              "staysWithUser": false,
+              "fatherId": 36,
+              "motherId": 37,
+              "createdAt": "2025-08-13T20:23:25.745Z",
+              "updatedAt": "2025-08-13T20:27:23.338Z",
+              "father": {
+                "id": 36,
+                "firstName": "Suresh",
+                "lastName": "Patel"
+              },
+              "mother": {
+                "id": 37,
+                "firstName": "Kiran",
+                "lastName": "Patel"
+              },
+              "spouseId": 55
+            },
+            "relationship": "cousin",
+            "level": 0,
+            "directRelationships": [
+              {
+                "partner": {
+                  "id": 55,
+                  "firstName": "Meera",
+                  "lastName": "Sharma",
+                  "gender": "female"
+                },
+                "relationshipType": "husband"
+              }
+            ]
+          }
+        ],
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 37,
+              "firstName": "Kiran",
+              "lastName": "Patel",
+              "gender": "female"
+            },
+            "relationshipType": "husband"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 35,
+          "firstName": "Mallika",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "mallika.patel@family.com",
+          "dateOfBirth": "1958-06-20",
+          "gender": "female",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": null,
+          "motherId": null,
+          "createdAt": "2025-08-13T20:23:24.019Z",
+          "updatedAt": "2025-08-13T20:23:24.019Z",
+          "father": null,
+          "mother": null,
+          "spouseId": 34
+        },
+        "relationship": "mother",
+        "level": 1,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 34,
+              "firstName": "Ramesh",
+              "lastName": "Patel",
+              "gender": "male"
+            },
+            "relationshipType": "wife"
+          }
+        ]
+      }
+    ],
+    "descendants": [
+      {
+        "user": {
+          "id": 43,
+          "firstName": "Arjun",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "arjun@family.com",
+          "dateOfBirth": "2005-03-10",
+          "gender": "male",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 38,
+          "motherId": 39,
+          "createdAt": "2025-08-13T20:23:26.783Z",
+          "updatedAt": "2025-08-13T20:23:26.783Z",
+          "father": {
+            "id": 38,
+            "firstName": "Prashanth",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 39,
+            "firstName": "Anjali",
+            "lastName": "Patel"
+          }
+        },
+        "relationship": "son",
+        "level": -1
+      },
+      {
+        "user": {
+          "id": 44,
+          "firstName": "Simran",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "simran@family.com",
+          "dateOfBirth": "2008-07-18",
+          "gender": "female",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 38,
+          "motherId": 39,
+          "createdAt": "2025-08-13T20:23:27.128Z",
+          "updatedAt": "2025-08-13T20:23:27.128Z",
+          "father": {
+            "id": 38,
+            "firstName": "Prashanth",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 39,
+            "firstName": "Anjali",
+            "lastName": "Patel"
+          }
+        },
+        "relationship": "daughter",
+        "level": -1
+      }
+    ],
+    "adjacent": [
+      {
+        "user": {
+          "id": 39,
+          "firstName": "Anjali",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "anjali@family.com",
+          "dateOfBirth": "1982-08-22",
+          "gender": "female",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": null,
+          "motherId": null,
+          "createdAt": "2025-08-13T20:23:25.402Z",
+          "updatedAt": "2025-08-13T20:27:23.410Z",
+          "spouseId": 38
+        },
+        "relationship": "wife",
+        "level": 0,
+        "spouseId": 39,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 38,
+              "firstName": "Prashanth",
+              "lastName": "Patel",
+              "gender": "male"
+            },
+            "relationshipType": "wife"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 41,
+          "firstName": "Priya",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "priya.patel@family.com",
+          "dateOfBirth": "1986-02-14",
+          "gender": "female",
+          "location": "Pune, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 36,
+          "motherId": 37,
+          "createdAt": "2025-08-13T20:23:26.092Z",
+          "updatedAt": "2025-08-13T20:23:26.092Z",
+          "father": {
+            "id": 36,
+            "firstName": "Suresh",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 37,
+            "firstName": "Kiran",
+            "lastName": "Patel"
+          },
+          "spouseId": 42
+        },
+        "relationship": "cousin",
+        "level": 0,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 42,
+              "firstName": "Vikram",
+              "lastName": "Shah",
+              "gender": "male"
+            },
+            "relationshipType": "wife"
+          }
+        ]
+      },
+      {
+        "user": {
+          "id": 40,
+          "firstName": "Amit",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "amit@family.com",
+          "dateOfBirth": "1983-11-25",
+          "gender": "male",
+          "location": "Pune, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 36,
+          "motherId": 37,
+          "createdAt": "2025-08-13T20:23:25.745Z",
+          "updatedAt": "2025-08-13T20:27:23.338Z",
+          "father": {
+            "id": 36,
+            "firstName": "Suresh",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 37,
+            "firstName": "Kiran",
+            "lastName": "Patel"
+          },
+          "spouseId": 55
+        },
+        "relationship": "cousin",
+        "level": 0,
+        "directRelationships": [
+          {
+            "partner": {
+              "id": 55,
+              "firstName": "Meera",
+              "lastName": "Sharma",
+              "gender": "female"
+            },
+            "relationshipType": "husband"
+          }
+        ]
+      }
+    ],
+    "totalMembers": 11,
+    "inLaws": [
+      {
+        "currentUser": {
+          "id": 39,
+          "firstName": "Anjali",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "anjali@family.com",
+          "dateOfBirth": "1982-08-22",
+          "gender": "female",
+          "location": "Mumbai, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": null,
+          "motherId": null,
+          "createdAt": "2025-08-13T20:23:25.402Z",
+          "updatedAt": "2025-08-13T20:27:23.410Z",
+          "father": null,
+          "mother": null,
+          "spouseId": 38,
+          "relationshipToUser": "spouse",
+          "isSpouse": true
+        },
+        "ancestors": [],
+        "descendants": [
+          {
+            "user": {
+              "id": 43,
+              "firstName": "Arjun",
+              "middleName": null,
+              "lastName": "Patel",
+              "email": "arjun@family.com",
+              "dateOfBirth": "2005-03-10",
+              "gender": "male",
+              "location": "Mumbai, Maharashtra, India",
+              "profilePicture": null,
+              "hasMedication": false,
+              "medicationName": null,
+              "medicationFrequency": null,
+              "medicationTime": null,
+              "isOnline": false,
+              "isDeceased": false,
+              "staysWithUser": false,
+              "fatherId": 38,
+              "motherId": 39,
+              "createdAt": "2025-08-13T20:23:26.783Z",
+              "updatedAt": "2025-08-13T20:23:26.783Z",
+              "father": {
+                "id": 38,
+                "firstName": "Prashanth",
+                "lastName": "Patel"
+              },
+              "mother": {
+                "id": 39,
+                "firstName": "Anjali",
+                "lastName": "Patel"
+              }
+            },
+            "relationship": "son-in-law",
+            "level": -1,
+            "isInLaw": true,
+            "throughSpouse": 39
+          },
+          {
+            "user": {
+              "id": 44,
+              "firstName": "Simran",
+              "middleName": null,
+              "lastName": "Patel",
+              "email": "simran@family.com",
+              "dateOfBirth": "2008-07-18",
+              "gender": "female",
+              "location": "Mumbai, Maharashtra, India",
+              "profilePicture": null,
+              "hasMedication": false,
+              "medicationName": null,
+              "medicationFrequency": null,
+              "medicationTime": null,
+              "isOnline": false,
+              "isDeceased": false,
+              "staysWithUser": false,
+              "fatherId": 38,
+              "motherId": 39,
+              "createdAt": "2025-08-13T20:23:27.128Z",
+              "updatedAt": "2025-08-13T20:23:27.128Z",
+              "father": {
+                "id": 38,
+                "firstName": "Prashanth",
+                "lastName": "Patel"
+              },
+              "mother": {
+                "id": 39,
+                "firstName": "Anjali",
+                "lastName": "Patel"
+              }
+            },
+            "relationship": "daughter-in-law",
+            "level": -1,
+            "isInLaw": true,
+            "throughSpouse": 39
+          }
+        ],
+        "adjacent": [],
+        "totalMembers": 4,
+        "context": "in-laws",
+        "spouseId": 39,
+        "primaryUserId": 38
+      }
+    ],
+    "extendedInLaws": [
+      {
+        "throughMember": {
+          "id": 41,
+          "firstName": "Priya",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "priya.patel@family.com",
+          "dateOfBirth": "1986-02-14",
+          "gender": "female",
+          "location": "Pune, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 36,
+          "motherId": 37,
+          "createdAt": "2025-08-13T20:23:26.092Z",
+          "updatedAt": "2025-08-13T20:23:26.092Z",
+          "father": {
+            "id": 36,
+            "firstName": "Suresh",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 37,
+            "firstName": "Kiran",
+            "lastName": "Patel"
+          },
+          "spouseId": 42
+        },
+        "inLawTree": {
+          "currentUser": {
+            "id": 42,
+            "firstName": "Vikram",
+            "middleName": null,
+            "lastName": "Shah",
+            "email": "vikram.shah@family.com",
+            "dateOfBirth": "1984-07-18",
+            "gender": "male",
+            "location": "Pune, Maharashtra, India",
+            "profilePicture": null,
+            "hasMedication": false,
+            "medicationName": null,
+            "medicationFrequency": null,
+            "medicationTime": null,
+            "isOnline": false,
+            "isDeceased": false,
+            "staysWithUser": false,
+            "fatherId": null,
+            "motherId": null,
+            "createdAt": "2025-08-13T20:23:26.436Z",
+            "updatedAt": "2025-08-13T20:23:26.436Z",
+            "father": null,
+            "mother": null,
+            "spouseId": 41,
+            "relationshipToUser": "spouse",
+            "isSpouse": true
+          },
+          "ancestors": [],
+          "descendants": [
+            {
+              "user": {
+                "id": 45,
+                "firstName": "Rohan",
+                "middleName": null,
+                "lastName": "Shah",
+                "email": "rohan.shah@family.com",
+                "dateOfBirth": "2011-09-05",
+                "gender": "male",
+                "location": "Pune, Maharashtra, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 42,
+                "motherId": 41,
+                "createdAt": "2025-08-13T20:23:27.473Z",
+                "updatedAt": "2025-08-13T20:23:27.473Z",
+                "father": {
+                  "id": 42,
+                  "firstName": "Vikram",
+                  "lastName": "Shah"
+                },
+                "mother": {
+                  "id": 41,
+                  "firstName": "Priya",
+                  "lastName": "Patel"
+                }
+              },
+              "relationship": "son-in-law",
+              "level": -1,
+              "isInLaw": true,
+              "throughSpouse": 42
+            },
+            {
+              "user": {
+                "id": 46,
+                "firstName": "Ishita",
+                "middleName": null,
+                "lastName": "Shah",
+                "email": "ishita.shah@family.com",
+                "dateOfBirth": "2013-12-20",
+                "gender": "female",
+                "location": "Pune, Maharashtra, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 42,
+                "motherId": 41,
+                "createdAt": "2025-08-13T20:23:27.817Z",
+                "updatedAt": "2025-08-13T20:23:27.817Z",
+                "father": {
+                  "id": 42,
+                  "firstName": "Vikram",
+                  "lastName": "Shah"
+                },
+                "mother": {
+                  "id": 41,
+                  "firstName": "Priya",
+                  "lastName": "Patel"
+                }
+              },
+              "relationship": "daughter-in-law",
+              "level": -1,
+              "isInLaw": true,
+              "throughSpouse": 42
+            }
+          ],
+          "adjacent": [],
+          "totalMembers": 4,
+          "context": "in-laws",
+          "spouseId": 42,
+          "primaryUserId": 38
+        },
+        "relationship": "cousin's spouse's family"
+      },
+      {
+        "throughMember": {
+          "id": 40,
+          "firstName": "Amit",
+          "middleName": null,
+          "lastName": "Patel",
+          "email": "amit@family.com",
+          "dateOfBirth": "1983-11-25",
+          "gender": "male",
+          "location": "Pune, Maharashtra, India",
+          "profilePicture": null,
+          "hasMedication": false,
+          "medicationName": null,
+          "medicationFrequency": null,
+          "medicationTime": null,
+          "isOnline": false,
+          "isDeceased": false,
+          "staysWithUser": false,
+          "fatherId": 36,
+          "motherId": 37,
+          "createdAt": "2025-08-13T20:23:25.745Z",
+          "updatedAt": "2025-08-13T20:27:23.338Z",
+          "father": {
+            "id": 36,
+            "firstName": "Suresh",
+            "lastName": "Patel"
+          },
+          "mother": {
+            "id": 37,
+            "firstName": "Kiran",
+            "lastName": "Patel"
+          },
+          "spouseId": 55
+        },
+        "inLawTree": {
+          "currentUser": {
+            "id": 55,
+            "firstName": "Meera",
+            "middleName": null,
+            "lastName": "Sharma",
+            "email": "meera.sharma@family.com",
+            "dateOfBirth": "1982-03-15",
+            "gender": "female",
+            "location": "Mumbai, India",
+            "profilePicture": null,
+            "hasMedication": false,
+            "medicationName": null,
+            "medicationFrequency": null,
+            "medicationTime": null,
+            "isOnline": true,
+            "isDeceased": false,
+            "staysWithUser": false,
+            "fatherId": 49,
+            "motherId": 50,
+            "createdAt": "2025-08-13T20:23:31.192Z",
+            "updatedAt": "2025-08-13T20:28:45.731Z",
+            "father": {
+              "id": 49,
+              "firstName": "Rajesh",
+              "lastName": "Sharma",
+              "gender": "male"
+            },
+            "mother": {
+              "id": 50,
+              "firstName": "Sunita",
+              "lastName": "Sharma",
+              "gender": "female"
+            },
+            "spouseId": 40,
+            "relationshipToUser": "spouse",
+            "isSpouse": true
+          },
+          "ancestors": [
+            {
+              "user": {
+                "id": 47,
+                "firstName": "Mohan",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "mohan.sharma@family.com",
+                "dateOfBirth": "1925-03-15",
+                "gender": "male",
+                "location": "Delhi, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": null,
+                "motherId": null,
+                "createdAt": "2025-08-13T20:23:28.161Z",
+                "updatedAt": "2025-08-13T20:23:28.161Z",
+                "father": null,
+                "mother": null,
+                "spouseId": 48
+              },
+              "relationship": "grandfather-in-law",
+              "level": 2,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 48,
+                    "firstName": "Kamala",
+                    "lastName": "Sharma",
+                    "gender": "female"
+                  },
+                  "relationshipType": "husband"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 48,
+                "firstName": "Kamala",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "kamala.sharma@family.com",
+                "dateOfBirth": "1930-07-20",
+                "gender": "female",
+                "location": "Delhi, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": null,
+                "motherId": null,
+                "createdAt": "2025-08-13T20:23:28.503Z",
+                "updatedAt": "2025-08-13T20:23:28.503Z",
+                "father": null,
+                "mother": null,
+                "spouseId": 47
+              },
+              "relationship": "grandmother-in-law",
+              "level": 2,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 47,
+                    "firstName": "Mohan",
+                    "lastName": "Sharma",
+                    "gender": "male"
+                  },
+                  "relationshipType": "wife"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 49,
+                "firstName": "Rajesh",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "rajesh.sharma@family.com",
+                "dateOfBirth": "1955-01-10",
+                "gender": "male",
+                "location": "Delhi, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 47,
+                "motherId": 48,
+                "createdAt": "2025-08-13T20:23:28.848Z",
+                "updatedAt": "2025-08-13T20:23:28.848Z",
+                "father": {
+                  "id": 47,
+                  "firstName": "Mohan",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 48,
+                  "firstName": "Kamala",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 50
+              },
+              "relationship": "father-in-law",
+              "level": 1,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 50,
+                    "firstName": "Sunita",
+                    "lastName": "Sharma",
+                    "gender": "female"
+                  },
+                  "relationshipType": "husband"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 51,
+                "firstName": "Vinod",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "vinod.sharma@family.com",
+                "dateOfBirth": "1952-09-05",
+                "gender": "male",
+                "location": "Mumbai, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 47,
+                "motherId": 48,
+                "createdAt": "2025-08-13T20:23:29.702Z",
+                "updatedAt": "2025-08-13T20:23:29.702Z",
+                "father": {
+                  "id": 47,
+                  "firstName": "Mohan",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 48,
+                  "firstName": "Kamala",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 52
+              },
+              "relationship": "uncle-in-law",
+              "level": 1,
+              "children": [
+                {
+                  "user": {
+                    "id": 58,
+                    "firstName": "Ravi",
+                    "middleName": null,
+                    "lastName": "Sharma",
+                    "email": "ravi.sharma@family.com",
+                    "dateOfBirth": "1983-11-25",
+                    "gender": "male",
+                    "location": "Mumbai, India",
+                    "profilePicture": null,
+                    "hasMedication": false,
+                    "medicationName": null,
+                    "medicationFrequency": null,
+                    "medicationTime": null,
+                    "isOnline": false,
+                    "isDeceased": false,
+                    "staysWithUser": false,
+                    "fatherId": 51,
+                    "motherId": 52,
+                    "createdAt": "2025-08-13T20:23:32.231Z",
+                    "updatedAt": "2025-08-13T20:23:32.231Z",
+                    "father": {
+                      "id": 51,
+                      "firstName": "Vinod",
+                      "lastName": "Sharma"
+                    },
+                    "mother": {
+                      "id": 52,
+                      "firstName": "Rekha",
+                      "lastName": "Sharma"
+                    },
+                    "spouseId": 59
+                  },
+                  "relationship": "cousin-in-law",
+                  "level": 0,
+                  "directRelationships": [
+                    {
+                      "partner": {
+                        "id": 59,
+                        "firstName": "Kavita",
+                        "lastName": "Sharma",
+                        "gender": "female"
+                      },
+                      "relationshipType": "husband"
+                    }
+                  ],
+                  "isInLaw": true,
+                  "throughSpouse": 55
+                },
+                {
+                  "user": {
+                    "id": 60,
+                    "firstName": "Neha",
+                    "middleName": null,
+                    "lastName": "Sharma",
+                    "email": "neha.sharma@family.com",
+                    "dateOfBirth": "1986-02-14",
+                    "gender": "female",
+                    "location": "Mumbai, India",
+                    "profilePicture": null,
+                    "hasMedication": false,
+                    "medicationName": null,
+                    "medicationFrequency": null,
+                    "medicationTime": null,
+                    "isOnline": false,
+                    "isDeceased": false,
+                    "staysWithUser": false,
+                    "fatherId": 51,
+                    "motherId": 52,
+                    "createdAt": "2025-08-13T20:23:32.925Z",
+                    "updatedAt": "2025-08-13T20:23:32.925Z",
+                    "father": {
+                      "id": 51,
+                      "firstName": "Vinod",
+                      "lastName": "Sharma"
+                    },
+                    "mother": {
+                      "id": 52,
+                      "firstName": "Rekha",
+                      "lastName": "Sharma"
+                    },
+                    "spouseId": 61
+                  },
+                  "relationship": "cousin-in-law",
+                  "level": 0,
+                  "directRelationships": [
+                    {
+                      "partner": {
+                        "id": 61,
+                        "firstName": "Deepak",
+                        "lastName": "Jain",
+                        "gender": "male"
+                      },
+                      "relationshipType": "wife"
+                    }
+                  ],
+                  "isInLaw": true,
+                  "throughSpouse": 55
+                }
+              ],
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 52,
+                    "firstName": "Rekha",
+                    "lastName": "Sharma",
+                    "gender": "female"
+                  },
+                  "relationshipType": "husband"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 50,
+                "firstName": "Sunita",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "sunita.sharma@family.com",
+                "dateOfBirth": "1958-06-20",
+                "gender": "female",
+                "location": "Delhi, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": null,
+                "motherId": null,
+                "createdAt": "2025-08-13T20:23:29.358Z",
+                "updatedAt": "2025-08-13T20:23:29.358Z",
+                "father": null,
+                "mother": null,
+                "spouseId": 49
+              },
+              "relationship": "mother-in-law",
+              "level": 1,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 49,
+                    "firstName": "Rajesh",
+                    "lastName": "Sharma",
+                    "gender": "male"
+                  },
+                  "relationshipType": "wife"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            }
+          ],
+          "descendants": [
+            {
+              "user": {
+                "id": 70,
+                "firstName": "Aarav",
+                "middleName": null,
+                "lastName": "Patel",
+                "email": "aarav.patel@family.com",
+                "dateOfBirth": "2010-04-15",
+                "gender": "male",
+                "location": "Mumbai, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 40,
+                "motherId": 55,
+                "createdAt": "2025-08-13T20:23:36.388Z",
+                "updatedAt": "2025-08-13T20:23:36.388Z",
+                "father": {
+                  "id": 40,
+                  "firstName": "Amit",
+                  "lastName": "Patel"
+                },
+                "mother": {
+                  "id": 55,
+                  "firstName": "Meera",
+                  "lastName": "Sharma"
+                }
+              },
+              "relationship": "son-in-law",
+              "level": -1,
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 71,
+                "firstName": "Kavya",
+                "middleName": null,
+                "lastName": "Patel",
+                "email": "kavya.patel@family.com",
+                "dateOfBirth": "2012-08-22",
+                "gender": "female",
+                "location": "Mumbai, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 40,
+                "motherId": 55,
+                "createdAt": "2025-08-13T20:23:36.734Z",
+                "updatedAt": "2025-08-13T20:23:36.734Z",
+                "father": {
+                  "id": 40,
+                  "firstName": "Amit",
+                  "lastName": "Patel"
+                },
+                "mother": {
+                  "id": 55,
+                  "firstName": "Meera",
+                  "lastName": "Sharma"
+                }
+              },
+              "relationship": "daughter-in-law",
+              "level": -1,
+              "isInLaw": true,
+              "throughSpouse": 55
+            }
+          ],
+          "adjacent": [
+            {
+              "user": {
+                "id": 58,
+                "firstName": "Ravi",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "ravi.sharma@family.com",
+                "dateOfBirth": "1983-11-25",
+                "gender": "male",
+                "location": "Mumbai, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 51,
+                "motherId": 52,
+                "createdAt": "2025-08-13T20:23:32.231Z",
+                "updatedAt": "2025-08-13T20:23:32.231Z",
+                "father": {
+                  "id": 51,
+                  "firstName": "Vinod",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 52,
+                  "firstName": "Rekha",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 59
+              },
+              "relationship": "cousin-in-law",
+              "level": 0,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 59,
+                    "firstName": "Kavita",
+                    "lastName": "Sharma",
+                    "gender": "female"
+                  },
+                  "relationshipType": "husband"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 60,
+                "firstName": "Neha",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "neha.sharma@family.com",
+                "dateOfBirth": "1986-02-14",
+                "gender": "female",
+                "location": "Mumbai, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 51,
+                "motherId": 52,
+                "createdAt": "2025-08-13T20:23:32.925Z",
+                "updatedAt": "2025-08-13T20:23:32.925Z",
+                "father": {
+                  "id": 51,
+                  "firstName": "Vinod",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 52,
+                  "firstName": "Rekha",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 61
+              },
+              "relationship": "cousin-in-law",
+              "level": 0,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 61,
+                    "firstName": "Deepak",
+                    "lastName": "Jain",
+                    "gender": "male"
+                  },
+                  "relationshipType": "wife"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 56,
+                "firstName": "Pooja",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "pooja.sharma@family.com",
+                "dateOfBirth": "1988-04-18",
+                "gender": "female",
+                "location": "Bangalore, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 49,
+                "motherId": 50,
+                "createdAt": "2025-08-13T20:23:31.540Z",
+                "updatedAt": "2025-08-13T20:23:31.540Z",
+                "father": {
+                  "id": 49,
+                  "firstName": "Rajesh",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 50,
+                  "firstName": "Sunita",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 57
+              },
+              "relationship": "sister-in-law",
+              "level": 0,
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 57,
+                    "firstName": "Raj",
+                    "lastName": "Gupta",
+                    "gender": "male"
+                  },
+                  "relationshipType": "wife"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            },
+            {
+              "user": {
+                "id": 53,
+                "firstName": "Rohit",
+                "middleName": null,
+                "lastName": "Sharma",
+                "email": "rohit.sharma@family.com",
+                "dateOfBirth": "1985-09-12",
+                "gender": "male",
+                "location": "Delhi, India",
+                "profilePicture": null,
+                "hasMedication": false,
+                "medicationName": null,
+                "medicationFrequency": null,
+                "medicationTime": null,
+                "isOnline": false,
+                "isDeceased": false,
+                "staysWithUser": false,
+                "fatherId": 49,
+                "motherId": 50,
+                "createdAt": "2025-08-13T20:23:30.491Z",
+                "updatedAt": "2025-08-13T20:27:23.482Z",
+                "father": {
+                  "id": 49,
+                  "firstName": "Rajesh",
+                  "lastName": "Sharma"
+                },
+                "mother": {
+                  "id": 50,
+                  "firstName": "Sunita",
+                  "lastName": "Sharma"
+                },
+                "spouseId": 54
+              },
+              "relationship": "brother-in-law",
+              "level": 0,
+              "children": [
+                {
+                  "user": {
+                    "id": 62,
+                    "firstName": "Karan",
+                    "middleName": null,
+                    "lastName": "Sharma",
+                    "email": "karan.sharma@family.com",
+                    "dateOfBirth": "2012-03-10",
+                    "gender": "male",
+                    "location": "Delhi, India",
+                    "profilePicture": null,
+                    "hasMedication": false,
+                    "medicationName": null,
+                    "medicationFrequency": null,
+                    "medicationTime": null,
+                    "isOnline": false,
+                    "isDeceased": false,
+                    "staysWithUser": false,
+                    "fatherId": 53,
+                    "motherId": 54,
+                    "createdAt": "2025-08-13T20:23:33.616Z",
+                    "updatedAt": "2025-08-13T20:23:33.616Z",
+                    "father": {
+                      "id": 53,
+                      "firstName": "Rohit",
+                      "lastName": "Sharma"
+                    },
+                    "mother": {
+                      "id": 54,
+                      "firstName": "Nisha",
+                      "lastName": "Sharma"
+                    }
+                  },
+                  "relationship": "nephew-in-law",
+                  "level": -1,
+                  "isInLaw": true,
+                  "throughSpouse": 55
+                },
+                {
+                  "user": {
+                    "id": 63,
+                    "firstName": "Nisha",
+                    "middleName": null,
+                    "lastName": "Sharma",
+                    "email": "nisha.sharma.jr@family.com",
+                    "dateOfBirth": "2014-07-18",
+                    "gender": "female",
+                    "location": "Delhi, India",
+                    "profilePicture": null,
+                    "hasMedication": false,
+                    "medicationName": null,
+                    "medicationFrequency": null,
+                    "medicationTime": null,
+                    "isOnline": false,
+                    "isDeceased": false,
+                    "staysWithUser": false,
+                    "fatherId": 53,
+                    "motherId": 54,
+                    "createdAt": "2025-08-13T20:23:33.961Z",
+                    "updatedAt": "2025-08-13T20:23:33.961Z",
+                    "father": {
+                      "id": 53,
+                      "firstName": "Rohit",
+                      "lastName": "Sharma"
+                    },
+                    "mother": {
+                      "id": 54,
+                      "firstName": "Nisha",
+                      "lastName": "Sharma"
+                    }
+                  },
+                  "relationship": "niece-in-law",
+                  "level": -1,
+                  "isInLaw": true,
+                  "throughSpouse": 55
+                }
+              ],
+              "directRelationships": [
+                {
+                  "partner": {
+                    "id": 54,
+                    "firstName": "Nisha",
+                    "lastName": "Sharma",
+                    "gender": "female"
+                  },
+                  "relationshipType": "husband"
+                }
+              ],
+              "isInLaw": true,
+              "throughSpouse": 55
+            }
+          ],
+          "totalMembers": 13,
+          "context": "in-laws",
+          "spouseId": 55,
+          "primaryUserId": 38
+        },
+        "relationship": "cousin's spouse's family"
+      }
+    ],
+    "context": "extended"
+  }
+}
