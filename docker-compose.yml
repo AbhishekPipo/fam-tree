@@ -1,5 +1,25 @@
 version: '3.8'
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: family_tree_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=family_tree
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Neo4j (keeping for reference/migration)
   neo4j:
     image: neo4j:4.4
     ports:
@@ -10,6 +30,9 @@ services:
       - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
     volumes:
       - neo4j_data:/data
+    profiles:
+      - neo4j  # Only start when explicitly requested
 
 volumes:
+  postgres_data:
   neo4j_data:
