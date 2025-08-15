@@ -1,26 +1,23 @@
-const swaggerJSDoc = require('swagger-jsdoc');
-const path = require('path');
+const swaggerJsdoc = require('swagger-jsdoc');
 
-const swaggerOptions = {
+const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Family Tree API',
+      title: 'Family Tree Neo4j API',
       version: '1.0.0',
-      description: 'A comprehensive family tree management API with optimized relationship tracking',
+      description: 'A comprehensive family tree management API using Neo4j graph database',
       contact: {
         name: 'Family Tree API Support',
         email: 'support@familytree.com'
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
       }
     },
     servers: [
       {
-        url: 'http://localhost:3000/api',
-        description: 'Development server'
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://your-production-domain.com/api'
+          : `http://localhost:${process.env.PORT || 3000}/api`,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
       }
     ],
     components: {
@@ -34,155 +31,104 @@ const swaggerOptions = {
       schemas: {
         User: {
           type: 'object',
-          required: ['firstName', 'lastName', 'email'],
           properties: {
             id: {
-              type: 'integer',
-              description: 'Unique user identifier',
-              example: 1
+              type: 'string',
+              description: 'Unique user identifier'
             },
             firstName: {
               type: 'string',
-              maxLength: 50,
-              description: 'User\'s first name',
-              example: 'Prashanth'
+              example: 'John'
             },
             middleName: {
               type: 'string',
-              maxLength: 50,
-              description: 'User\'s middle name',
-              example: 'Kumar'
+              example: 'Michael'
             },
             lastName: {
               type: 'string',
-              maxLength: 50,
-              description: 'User\'s last name',
-              example: 'Patel'
+              example: 'Doe'
             },
             email: {
               type: 'string',
               format: 'email',
-              description: 'User\'s email address',
-              example: 'prashanth@family.com'
+              example: 'john.doe@family.com'
             },
             dateOfBirth: {
               type: 'string',
               format: 'date',
-              description: 'User\'s date of birth',
-              example: '1975-03-10'
+              example: '1990-05-15'
             },
             gender: {
               type: 'string',
               enum: ['male', 'female', 'other'],
-              description: 'User\'s gender',
               example: 'male'
             },
             location: {
               type: 'string',
-              maxLength: 100,
-              description: 'User\'s location',
-              example: 'Bangalore, India'
+              example: 'New York, USA'
             },
             profilePicture: {
               type: 'string',
-              description: 'URL to user\'s profile picture'
+              example: '/uploads/profile-123.jpg'
             },
             hasMedication: {
               type: 'boolean',
-              description: 'Whether user takes medication',
-              example: true
+              example: false
             },
             medicationName: {
               type: 'string',
-              description: 'Name of medication',
               example: 'Blood Pressure Medicine'
             },
             medicationFrequency: {
               type: 'string',
-              description: 'How often medication is taken',
               example: 'Daily'
             },
             medicationTime: {
               type: 'string',
-              description: 'When medication is taken',
               example: 'Morning'
             },
             isOnline: {
               type: 'boolean',
-              description: 'Whether user is currently online',
               example: false
             },
             isDeceased: {
               type: 'boolean',
-              description: 'Whether user is deceased',
               example: false
             },
             staysWithUser: {
               type: 'boolean',
-              description: 'Whether user stays with current user',
               example: false
-            },
-            fatherId: {
-              type: 'integer',
-              description: 'ID of user\'s father',
-              example: 1
-            },
-            motherId: {
-              type: 'integer',
-              description: 'ID of user\'s mother',
-              example: 2
             },
             createdAt: {
               type: 'string',
-              format: 'date-time',
-              description: 'When user account was created'
+              format: 'date-time'
             },
             updatedAt: {
               type: 'string',
-              format: 'date-time',
-              description: 'When user account was last updated'
+              format: 'date-time'
             }
           }
         },
         FamilyMember: {
-          type: 'object',
-          properties: {
-            user: {
-              $ref: '#/components/schemas/User'
-            },
-            relationship: {
-              type: 'string',
-              description: 'Relationship to the current user',
-              example: 'father'
-            },
-            level: {
-              type: 'integer',
-              description: 'Relationship level (+ve ancestors, -ve descendants, 0 same generation)',
-              example: 1
-            },
-            parentInfo: {
+          allOf: [
+            { $ref: '#/components/schemas/User' },
+            {
               type: 'object',
               properties: {
-                directParent: {
-                  type: 'object',
-                  properties: {
-                    id: {
-                      type: 'integer',
-                      example: 5
-                    },
-                    name: {
-                      type: 'string',
-                      example: 'Simran Patel'
-                    },
-                    relationship: {
-                      type: 'string',
-                      example: 'daughter'
-                    }
-                  }
+                relationship: {
+                  type: 'string',
+                  example: 'father'
+                },
+                level: {
+                  type: 'integer',
+                  example: 1
+                },
+                spouse: {
+                  $ref: '#/components/schemas/User'
                 }
               }
             }
-          }
+          ]
         },
         FamilyTree: {
           type: 'object',
@@ -194,148 +140,63 @@ const swaggerOptions = {
               type: 'array',
               items: {
                 $ref: '#/components/schemas/FamilyMember'
-              },
-              description: 'Family members who are ancestors (parents, grandparents, etc.)'
+              }
             },
             descendants: {
               type: 'array',
               items: {
                 $ref: '#/components/schemas/FamilyMember'
-              },
-              description: 'Family members who are descendants (children, grandchildren, etc.)'
+              }
             },
             adjacent: {
               type: 'array',
               items: {
                 $ref: '#/components/schemas/FamilyMember'
-              },
-              description: 'Family members at same level (spouses, siblings, cousins)'
+              }
             },
             totalMembers: {
               type: 'integer',
-              description: 'Total number of family members',
-              example: 7
-            }
-          }
-        },
-        LoginRequest: {
-          type: 'object',
-          required: ['email', 'password'],
-          properties: {
-            email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email address',
-              example: 'prashanth@family.com'
-            },
-            password: {
-              type: 'string',
-              minLength: 6,
-              description: 'User password',
-              example: 'FamilyTree123!'
-            }
-          }
-        },
-        RegisterRequest: {
-          type: 'object',
-          required: ['firstName', 'lastName', 'email', 'password'],
-          properties: {
-            firstName: {
-              type: 'string',
-              maxLength: 50,
-              example: 'John'
-            },
-            middleName: {
-              type: 'string',
-              maxLength: 50,
-              example: 'Kumar'
-            },
-            lastName: {
-              type: 'string',
-              maxLength: 50,
-              example: 'Doe'
-            },
-            email: {
-              type: 'string',
-              format: 'email',
-              example: 'john@example.com'
-            },
-            password: {
-              type: 'string',
-              minLength: 6,
-              description: 'Must contain at least one lowercase, uppercase, and number',
-              example: 'SecurePass123!'
-            },
-            dateOfBirth: {
-              type: 'string',
-              format: 'date',
-              example: '1990-01-15'
-            },
-            gender: {
-              type: 'string',
-              enum: ['male', 'female', 'other'],
-              example: 'male'
-            },
-            location: {
-              type: 'string',
-              maxLength: 100,
-              example: 'New York, USA'
-            },
-            fatherId: {
-              type: 'integer',
-              description: 'ID of father (if known)',
-              example: 1
-            },
-            motherId: {
-              type: 'integer',
-              description: 'ID of mother (if known)',
-              example: 2
+              example: 15
             }
           }
         },
         AddFamilyMemberRequest: {
           type: 'object',
-          required: ['firstName', 'lastName', 'email', 'relationshipType'],
+          required: ['firstName', 'lastName', 'email', 'relationshipType', 'gender'],
           properties: {
             firstName: {
               type: 'string',
-              maxLength: 50,
-              example: 'New'
+              example: 'Jane'
             },
             middleName: {
               type: 'string',
-              maxLength: 50,
-              example: 'Kumar'
+              example: 'Marie'
             },
             lastName: {
               type: 'string',
-              maxLength: 50,
-              example: 'Member'
+              example: 'Doe'
             },
             email: {
               type: 'string',
               format: 'email',
-              example: 'newmember@family.com'
+              example: 'jane.doe@family.com'
             },
             relationshipType: {
               type: 'string',
-              enum: ['father', 'mother', 'son', 'daughter', 'husband', 'wife', 'partner', 'brother', 'sister'],
-              description: 'Relationship to the current user',
-              example: 'son'
-            },
-            dateOfBirth: {
-              type: 'string',
-              format: 'date',
-              example: '2010-05-20'
+              example: 'daughter'
             },
             gender: {
               type: 'string',
               enum: ['male', 'female', 'other'],
-              example: 'male'
+              example: 'female'
+            },
+            dateOfBirth: {
+              type: 'string',
+              format: 'date',
+              example: '2010-03-20'
             },
             location: {
               type: 'string',
-              maxLength: 100,
               example: 'Family Home'
             },
             hasMedication: {
@@ -344,7 +205,7 @@ const swaggerOptions = {
             },
             medicationName: {
               type: 'string',
-              example: 'Daily Vitamins'
+              example: 'Vitamins'
             },
             medicationFrequency: {
               type: 'string',
@@ -366,10 +227,6 @@ const swaggerOptions = {
             message: {
               type: 'string',
               example: 'Operation completed successfully'
-            },
-            data: {
-              type: 'object',
-              description: 'Response data'
             }
           }
         },
@@ -382,31 +239,11 @@ const swaggerOptions = {
             },
             message: {
               type: 'string',
-              example: 'Error message describing what went wrong'
+              example: 'An error occurred'
             },
             error: {
               type: 'string',
-              example: 'ERROR_CODE'
-            },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  field: {
-                    type: 'string',
-                    example: 'email'
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Please provide a valid email address'
-                  },
-                  value: {
-                    type: 'string',
-                    example: 'invalid-email'
-                  }
-                }
-              }
+              example: 'VALIDATION_ERROR'
             }
           }
         }
@@ -418,13 +255,8 @@ const swaggerOptions = {
       }
     ]
   },
-  apis: [
-    path.join(__dirname, '../routes/*.js'),
-    path.join(__dirname, '../controllers/*.js'),
-    path.join(__dirname, '../../server.js')
-  ]
+  apis: ['./server.js', './src/routes/*.js', './src/controllers/*.js']
 };
 
-const swaggerSpec = swaggerJSDoc(swaggerOptions);
-
-module.exports = swaggerSpec;
+const specs = swaggerJsdoc(options);
+module.exports = specs;

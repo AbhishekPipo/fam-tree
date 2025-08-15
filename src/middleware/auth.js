@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { AppError } = require('./errorHandler');
+const database = require('../config/database');
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -7,51 +8,44 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access token is required'
-      });
+      throw new AppError('Access token required', 401, 'TOKEN_REQUIRED');
     }
 
+    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Fetch the user from database to ensure they still exist and get latest data
-    const user = await User.findByPk(decoded.userId);
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token - user not found'
-      });
+    // Check if user still exists in database
+    const result = await database.runQuery(
+      'MATCH (u:User {id: $userId}) RETURN u',
+      { userId: decoded.userId }
+    );
+
+    if (result.records.length === 0) {
+      throw new AppError('User not found', 401, 'USER_NOT_FOUND');
     }
 
-    // Add user to request object
-    req.user = user;
+    const user = database.constructor.extractNodeProperties(result.records[0], 'u');
+    
+    // Add user info to request
+    req.user = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName
+    };
+
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token'
-      });
+    if (error instanceof jwt.JsonWebTokenError) {
+      return next(new AppError('Invalid token', 401, 'INVALID_TOKEN'));
     }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token has expired'
-      });
+    if (error instanceof jwt.TokenExpiredError) {
+      return next(new AppError('Token expired', 401, 'TOKEN_EXPIRED'));
     }
-
-    console.error('Authentication error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Authentication failed'
-    });
+    next(error);
   }
 };
 
-// Generate JWT token
 const generateToken = (userId) => {
   return jwt.sign(
     { userId },
@@ -60,29 +54,7 @@ const generateToken = (userId) => {
   );
 };
 
-// Optional authentication - doesn't fail if no token provided
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findByPk(decoded.userId);
-      if (user) {
-        req.user = user;
-      }
-    }
-    
-    next();
-  } catch (error) {
-    // Silently continue without authentication
-    next();
-  }
-};
-
 module.exports = {
   authenticateToken,
-  generateToken,
-  optionalAuth
+  generateToken
 };

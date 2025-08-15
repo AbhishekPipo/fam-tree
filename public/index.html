@@ -3,535 +3,972 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Tree API Tester</title>
+    <title>Family Tree Neo4j - Dynamic Graph Visualization</title>
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
         }
-        
+
         .container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            max-width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        
+
         .header {
-            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 30px;
+            margin: 0;
         }
-        
-        .section {
-            margin-bottom: 30px;
-            padding: 20px;
+
+        .auth-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .login-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .control-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        input, select, button {
+            padding: 6px 12px;
             border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        
-        .section h3 {
-            margin-top: 0;
-            color: #34495e;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+
+        input {
+            cursor: text;
         }
-        
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        select:hover, button:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .sidebar.active {
+            display: block;
+        }
+
+        .graph-container {
+            flex: 1;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #familyTreeGraph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+
+        .stats-panel h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 16px;
+            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
-        
-        label {
+
+        .form-group label {
             display: block;
             margin-bottom: 5px;
-            font-weight: bold;
+            font-weight: 600;
             color: #2c3e50;
         }
-        
-        input, select, button {
+
+        .form-group input,
+        .form-group select {
             width: 100%;
-            padding: 10px;
+            padding: 8px 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .result {
-            background-color: #ecf0f1;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-            white-space: pre-wrap;
-            font-family: monospace;
+            border-radius: 6px;
             font-size: 14px;
+        }
+
+        .member-list {
             max-height: 400px;
             overflow-y: auto;
         }
-        
-        .success {
-            background-color: #d5edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .family-tree {
-            background-color: #e8f6f3;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
-        
-        .family-member {
-            background-color: white;
+
+        .member-item {
             padding: 10px;
-            margin: 5px 0;
-            border-left: 4px solid #3498db;
-            border-radius: 3px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: white;
         }
-        
-        .credentials {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+
+        .member-name {
+            font-weight: 600;
+            color: #2c3e50;
         }
-        
-        .credentials h4 {
-            margin-top: 0;
-            color: #856404;
+
+        .member-relationship {
+            font-size: 12px;
+            color: #667eea;
+            text-transform: capitalize;
         }
-        
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+
+        .member-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
         }
-        
+
         @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
             }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 1000;
+                height: 100%;
+            }
+            
+            .stats-panel {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.info {
+            background: #17a2b8;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🌳 Family Tree API Tester</h1>
-            <p>Interactive tool to test the Family Tree Application API</p>
-            <div style="margin-top: 15px;">
-                <a href="/api-docs" target="_blank" style="background-color: #2980b9; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px;">📚 API Documentation</a>
-                <a href="/login.html" style="background-color: #8e44ad; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px;">🔐 Login</a>
-                <a href="/dynamic_family_tree_graph.html" style="background-color: #e74c3c; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px;">🌐 Graph View</a>
-                <a href="/api/health" target="_blank" style="background-color: #27ae60; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px;">💊 Health Check</a>
-            </div>
-        </div>
-
-        <div class="credentials">
-            <h4>📝 Sample Login Credentials:</h4>
-            <ul>
-                <li><strong>Email:</strong> prashanth@family.com | <strong>Password:</strong> FamilyTree123!</li>
-                <li><strong>Email:</strong> anjali@family.com | <strong>Password:</strong> FamilyTree123!</li>
-                <li><strong>Email:</strong> simran@family.com | <strong>Password:</strong> FamilyTree123!</li>
-                <li><strong>Email:</strong> ramesh@family.com | <strong>Password:</strong> FamilyTree123!</li>
-            </ul>
-        </div>
-
-        <div class="grid">
-            <div class="section">
-                <h3>🔐 Authentication</h3>
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🌳 Family Tree Neo4j</h1>
                 
-                <div class="form-group">
-                    <button onclick="testHealth()">Test Health Check</button>
-                    <div id="healthResult" class="result" style="display: none;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="loginEmail">Email:</label>
-                    <input type="email" id="loginEmail" value="prashanth@family.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="loginPassword">Password:</label>
-                    <input type="password" id="loginPassword" value="FamilyTree123!">
-                </div>
-                
-                <button onclick="login()">Login</button>
-                <button onclick="logout()" id="logoutBtn" style="display: none;">Logout</button>
-                
-                <div id="loginResult" class="result" style="display: none;"></div>
-            </div>
-
-            <div class="section">
-                <h3>👤 User Profile</h3>
-                
-                <button onclick="getProfile()" id="profileBtn" disabled>Get Profile</button>
-                
-                <div class="form-group" style="margin-top: 15px;">
-                    <label for="updateLocation">Location:</label>
-                    <input type="text" id="updateLocation" placeholder="Enter new location">
-                </div>
-                
-                <div class="form-group">
-                    <label for="updateMedication">Has Medication:</label>
-                    <select id="updateMedication">
-                        <option value="false">No</option>
-                        <option value="true">Yes</option>
-                    </select>
-                </div>
-                
-                <button onclick="updateProfile()" id="updateBtn" disabled>Update Profile</button>
-                
-                <div id="profileResult" class="result" style="display: none;"></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>🌳 Family Tree</h3>
-            
-            <div class="grid">
-                <div>
-                    <button onclick="getFamilyTree()" id="treeBtn" disabled>Get Family Tree</button>
-                    <button onclick="getAllMembers()" id="membersBtn" disabled>Get All Members</button>
-                </div>
-                
-                <div>
-                    <button onclick="showAddMemberForm()" id="addMemberBtn" disabled>Add Family Member</button>
-                </div>
-            </div>
-
-            <div id="addMemberForm" style="display: none; margin-top: 20px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
-                <h4>Add New Family Member</h4>
-                <div class="grid">
-                    <div>
-                        <div class="form-group">
-                            <label for="newFirstName">First Name:</label>
-                            <input type="text" id="newFirstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newLastName">Last Name:</label>
-                            <input type="text" id="newLastName" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="newEmail">Email:</label>
-                            <input type="email" id="newEmail" required>
-                        </div>
+                <div class="auth-section">
+                    <div class="login-form" id="loginForm">
+                        <input type="email" id="loginEmail" placeholder="Email" value="prashanth@family.com">
+                        <input type="password" id="loginPassword" placeholder="Password" value="FamilyTree123!">
+                        <button onclick="login()">Login</button>
                     </div>
-                    <div>
-                        <div class="form-group">
-                            <label for="newGender">Gender:</label>
-                            <select id="newGender" required>
-                                <option value="">Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="newRelationship">Relationship:</label>
-                            <select id="newRelationship" required>
-                                <option value="">Select Relationship</option>
-                                <option value="father">Father</option>
-                                <option value="mother">Mother</option>
-                                <option value="son">Son</option>
-                                <option value="daughter">Daughter</option>
-                                <option value="brother">Brother</option>
-                                <option value="sister">Sister</option>
-                                <option value="husband">Husband</option>
-                                <option value="wife">Wife</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="newBirthDate">Date of Birth:</label>
-                            <input type="date" id="newBirthDate">
-                        </div>
+                    
+                    <div class="user-info" id="userInfo">
+                        <span id="userName">Welcome!</span>
+                        <button onclick="logout()" class="btn-secondary">Logout</button>
                     </div>
                 </div>
-                <button onclick="addFamilyMember()">Add Member</button>
-                <button onclick="hideAddMemberForm()">Cancel</button>
+
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Layout:</label>
+                        <select id="layoutSelect" onchange="changeLayout()">
+                            <option value="hierarchical">Hierarchical</option>
+                            <option value="force">Force Directed</option>
+                            <option value="circular">Circular</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>View:</label>
+                        <select id="viewSelect" onchange="changeView()">
+                            <option value="basic">Basic Tree</option>
+                            <option value="extended">Extended Family</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="toggleSidebar()">Family Members</button>
+                    <button onclick="refreshTree()">Refresh</button>
+                    <button onclick="showAddMemberForm()">Add Member</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <h3>Family Members</h3>
+                <div class="member-list" id="memberList">
+                    <!-- Family members will be populated here -->
+                </div>
+                
+                <div id="addMemberForm" style="display: none;">
+                    <h3>Add Family Member</h3>
+                    <div class="form-group">
+                        <label>First Name:</label>
+                        <input type="text" id="memberFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name:</label>
+                        <input type="text" id="memberLastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="memberEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Relationship:</label>
+                        <select id="memberRelationship" required>
+                            <option value="">Select relationship...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender:</label>
+                        <select id="memberGender" required>
+                            <option value="">Select gender...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth:</label>
+                        <input type="date" id="memberDateOfBirth">
+                    </div>
+                    <div class="form-group">
+                        <label>Location:</label>
+                        <input type="text" id="memberLocation">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button onclick="addFamilyMember()">Add Member</button>
+                        <button onclick="hideAddMemberForm()" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
             </div>
 
-            <div id="familyResult" class="result" style="display: none;"></div>
+            <div class="graph-container">
+                <div id="familyTreeGraph" class="loading">
+                    Loading family tree...
+                </div>
+                
+                <div class="stats-panel" id="statsPanel">
+                    <h3>Family Statistics</h3>
+                    <div class="stat-item">
+                        <span>Total Members:</span>
+                        <span class="stat-value" id="totalMembers">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Ancestors:</span>
+                        <span class="stat-value" id="ancestorCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Descendants:</span>
+                        <span class="stat-value" id="descendantCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Adjacent:</span>
+                        <span class="stat-value" id="adjacentCount">0</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <div id="notification" class="notification"></div>
+
     <script>
-        const API_BASE = 'http://localhost:3000/api';
+        // Global variables
+        let network = null;
+        let familyData = null;
         let authToken = localStorage.getItem('authToken');
         let currentUser = null;
 
-        // Update UI based on auth state
-        function updateUI() {
-            const isLoggedIn = !!authToken;
-            document.getElementById('logoutBtn').style.display = isLoggedIn ? 'inline-block' : 'none';
-            document.getElementById('profileBtn').disabled = !isLoggedIn;
-            document.getElementById('updateBtn').disabled = !isLoggedIn;
-            document.getElementById('treeBtn').disabled = !isLoggedIn;
-            document.getElementById('membersBtn').disabled = !isLoggedIn;
-            document.getElementById('addMemberBtn').disabled = !isLoggedIn;
-        }
-
-        // Initialize
-        updateUI();
-
-        async function testHealth() {
-            try {
-                const response = await fetch(`${API_BASE}/health`);
-                const data = await response.json();
-                showResult('healthResult', JSON.stringify(data, null, 2), 'success');
-            } catch (error) {
-                showResult('healthResult', `Error: ${error.message}`, 'error');
+        // API Configuration
+        const API_BASE = '/api';
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            if (authToken) {
+                checkAuthAndLoadTree();
+            } else {
+                showLoginForm();
             }
-        }
+            loadRelationshipTypes();
+        });
 
+        // Authentication functions
         async function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
 
+            if (!email || !password) {
+                showNotification('Please enter email and password', 'error');
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_BASE}/auth/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email,
+                    password
                 });
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    authToken = data.data.token;
-                    currentUser = data.data.user;
+                if (response.data.success) {
+                    authToken = response.data.data.token;
+                    currentUser = response.data.data.user;
                     localStorage.setItem('authToken', authToken);
-                    showResult('loginResult', `Login successful!\nWelcome ${currentUser.firstName} ${currentUser.lastName}`, 'success');
-                    updateUI();
+                    
+                    showUserInfo();
+                    loadFamilyTree();
+                    showNotification('Login successful!', 'success');
                 } else {
-                    showResult('loginResult', `Login failed: ${data.message}`, 'error');
+                    showNotification('Login failed', 'error');
                 }
             } catch (error) {
-                showResult('loginResult', `Error: ${error.message}`, 'error');
+                console.error('Login error:', error);
+                showNotification(error.response?.data?.message || 'Login failed', 'error');
             }
         }
 
         async function logout() {
             try {
-                const response = await fetch(`${API_BASE}/auth/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-
-                const data = await response.json();
-                
-                authToken = null;
-                currentUser = null;
-                localStorage.removeItem('authToken');
-                showResult('loginResult', 'Logged out successfully', 'success');
-                updateUI();
-            } catch (error) {
-                showResult('loginResult', `Logout error: ${error.message}`, 'error');
-            }
-        }
-
-        async function getProfile() {
-            try {
-                const response = await fetch(`${API_BASE}/auth/profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-
-                const data = await response.json();
-                showResult('profileResult', JSON.stringify(data.data.user, null, 2), 'success');
-            } catch (error) {
-                showResult('profileResult', `Error: ${error.message}`, 'error');
-            }
-        }
-
-        async function updateProfile() {
-            const location = document.getElementById('updateLocation').value;
-            const hasMedication = document.getElementById('updateMedication').value === 'true';
-
-            try {
-                const response = await fetch(`${API_BASE}/auth/profile`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        location,
-                        hasMedication
-                    })
-                });
-
-                const data = await response.json();
-                showResult('profileResult', JSON.stringify(data, null, 2), data.success ? 'success' : 'error');
-            } catch (error) {
-                showResult('profileResult', `Error: ${error.message}`, 'error');
-            }
-        }
-
-        async function getFamilyTree() {
-            try {
-                const response = await fetch(`${API_BASE}/family/tree`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    const familyData = data.data;
-                    let output = `Family Tree for ${familyData.currentUser.firstName} ${familyData.currentUser.lastName}\n`;
-                    output += `Total Family Members: ${familyData.totalMembers}\n\n`;
-                    
-                    if (familyData.ancestors.length > 0) {
-                        output += "👴👵 ANCESTORS:\n";
-                        familyData.ancestors.forEach(member => {
-                            output += `  - ${member.user.firstName} ${member.user.lastName} (${member.relationship})\n`;
-                        });
-                        output += "\n";
-                    }
-                    
-                    if (familyData.adjacent.length > 0) {
-                        output += "💑 SPOUSE/PARTNER:\n";
-                        familyData.adjacent.forEach(member => {
-                            output += `  - ${member.user.firstName} ${member.user.lastName} (${member.relationship})\n`;
-                        });
-                        output += "\n";
-                    }
-                    
-                    if (familyData.descendants.length > 0) {
-                        output += "👶👧 DESCENDANTS:\n";
-                        familyData.descendants.forEach(member => {
-                            let parentInfo = '';
-                            if (member.parentInfo) {
-                                parentInfo = ` (via ${member.parentInfo.directParent.name})`;
-                            }
-                            output += `  - ${member.user.firstName} ${member.user.lastName} (${member.relationship})${parentInfo}\n`;
-                        });
-                    }
-                    
-                    showResult('familyResult', output, 'success');
-                } else {
-                    showResult('familyResult', `Error: ${data.message}`, 'error');
+                if (authToken) {
+                    await axios.post(`${API_BASE}/auth/logout`, {}, {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
                 }
             } catch (error) {
-                showResult('familyResult', `Error: ${error.message}`, 'error');
+                console.error('Logout error:', error);
             }
+
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('authToken');
+            showLoginForm();
+            clearGraph();
+            showNotification('Logged out successfully', 'info');
         }
 
-        async function getAllMembers() {
+        async function checkAuthAndLoadTree() {
             try {
-                const response = await fetch(`${API_BASE}/family/members`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
+                const response = await axios.get(`${API_BASE}/auth/profile`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
                 });
 
-                const data = await response.json();
-                showResult('familyResult', JSON.stringify(data, null, 2), data.success ? 'success' : 'error');
+                if (response.data.success) {
+                    currentUser = response.data.data.user;
+                    showUserInfo();
+                    loadFamilyTree();
+                } else {
+                    throw new Error('Authentication failed');
+                }
             } catch (error) {
-                showResult('familyResult', `Error: ${error.message}`, 'error');
+                console.error('Auth check error:', error);
+                logout();
             }
         }
 
-        function showAddMemberForm() {
-            document.getElementById('addMemberForm').style.display = 'block';
+        function showLoginForm() {
+            document.getElementById('loginForm').style.display = 'flex';
+            document.getElementById('userInfo').style.display = 'none';
         }
 
-        function hideAddMemberForm() {
-            document.getElementById('addMemberForm').style.display = 'none';
-            // Clear form
-            document.getElementById('newFirstName').value = '';
-            document.getElementById('newLastName').value = '';
-            document.getElementById('newEmail').value = '';
-            document.getElementById('newGender').value = '';
-            document.getElementById('newRelationship').value = '';
-            document.getElementById('newBirthDate').value = '';
+        function showUserInfo() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userName').textContent = `Welcome, ${currentUser.firstName}!`;
         }
 
-        async function addFamilyMember() {
-            const firstName = document.getElementById('newFirstName').value;
-            const lastName = document.getElementById('newLastName').value;
-            const email = document.getElementById('newEmail').value;
-            const gender = document.getElementById('newGender').value;
-            const relationshipType = document.getElementById('newRelationship').value;
-            const dateOfBirth = document.getElementById('newBirthDate').value;
-
-            if (!firstName || !lastName || !email || !gender || !relationshipType) {
-                showResult('familyResult', 'Please fill in all required fields', 'error');
+        // Family tree functions
+        async function loadFamilyTree() {
+            if (!authToken) {
+                showNotification('Please login first', 'error');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_BASE}/family/member`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        firstName,
-                        lastName,
-                        email,
-                        gender,
-                        relationshipType,
-                        dateOfBirth
-                    })
+                document.getElementById('familyTreeGraph').innerHTML = '<div class="loading">Loading family tree...</div>';
+
+                const viewType = document.getElementById('viewSelect').value;
+                const endpoint = viewType === 'extended' 
+                    ? `${API_BASE}/family/tree/extended?includeInLaws=true`
+                    : `${API_BASE}/family/tree`;
+
+                const response = await axios.get(endpoint, {
+                    headers: { Authorization: `Bearer ${authToken}` }
                 });
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    showResult('familyResult', `Family member added successfully!\n${JSON.stringify(data.data.user, null, 2)}`, 'success');
-                    hideAddMemberForm();
+                if (response.data.success) {
+                    familyData = response.data.data;
+                    renderFamilyTree(familyData);
+                    updateStats(familyData);
+                    loadFamilyMembers();
                 } else {
-                    showResult('familyResult', `Error: ${data.message}`, 'error');
+                    throw new Error('Failed to load family tree');
                 }
             } catch (error) {
-                showResult('familyResult', `Error: ${error.message}`, 'error');
+                console.error('Load family tree error:', error);
+                document.getElementById('familyTreeGraph').innerHTML = 
+                    `<div class="error">Error loading family tree: ${error.response?.data?.message || error.message}</div>`;
+                showNotification('Failed to load family tree', 'error');
             }
         }
 
-        function showResult(elementId, content, type) {
-            const element = document.getElementById(elementId);
-            element.textContent = content;
-            element.className = `result ${type}`;
-            element.style.display = 'block';
+        function renderFamilyTree(data) {
+            const container = document.getElementById('familyTreeGraph');
+            container.innerHTML = '';
+
+            // Prepare nodes and edges for vis.js
+            const nodes = [];
+            const edges = [];
+
+            // Add current user
+            nodes.push({
+                id: data.currentUser.id,
+                label: `${data.currentUser.firstName} ${data.currentUser.lastName}`,
+                title: `${data.currentUser.firstName} ${data.currentUser.lastName}\\nEmail: ${data.currentUser.email}\\nGender: ${data.currentUser.gender}`,
+                color: { background: '#667eea', border: '#5a6fd8' },
+                font: { color: 'white', size: 14, face: 'Arial' },
+                shape: 'box',
+                level: 0
+            });
+
+            // Add family members
+            [...data.ancestors, ...data.descendants, ...data.adjacent].forEach(member => {
+                const user = member.user;
+                let color = { background: '#f8f9fa', border: '#dee2e6' };
+                
+                // Color coding by relationship level
+                if (member.level > 0) {
+                    color = { background: '#e3f2fd', border: '#2196f3' }; // Ancestors - blue
+                } else if (member.level < 0) {
+                    color = { background: '#f3e5f5', border: '#9c27b0' }; // Descendants - purple
+                } else {
+                    color = { background: '#e8f5e8', border: '#4caf50' }; // Adjacent - green
+                }
+
+                nodes.push({
+                    id: user.id,
+                    label: `${user.firstName} ${user.lastName}`,
+                    title: `${user.firstName} ${user.lastName}\\nRelationship: ${member.relationship}\\nEmail: ${user.email}\\nGender: ${user.gender}`,
+                    color: color,
+                    font: { size: 12, face: 'Arial' },
+                    shape: 'box',
+                    level: member.level
+                });
+
+                // Add edge to current user
+                edges.push({
+                    from: data.currentUser.id,
+                    to: user.id,
+                    label: member.relationship,
+                    font: { size: 10, color: '#666' },
+                    color: { color: '#999' },
+                    arrows: { to: { enabled: false } }
+                });
+            });
+
+            // Create network
+            const networkData = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+            const options = getNetworkOptions();
+            
+            network = new vis.Network(container, networkData, options);
+
+            // Add event listeners
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    showNodeDetails(nodeId);
+                }
+            });
         }
+
+        function getNetworkOptions() {
+            const layout = document.getElementById('layoutSelect').value;
+            
+            const baseOptions = {
+                layout: {
+                    improvedLayout: true,
+                    clusterThreshold: 150
+                },
+                physics: {
+                    enabled: true,
+                    stabilization: { iterations: 100 }
+                },
+                interaction: {
+                    dragNodes: true,
+                    dragView: true,
+                    zoomView: true
+                },
+                nodes: {
+                    borderWidth: 2,
+                    shadow: true,
+                    margin: 10
+                },
+                edges: {
+                    width: 2,
+                    shadow: true,
+                    smooth: {
+                        type: 'continuous',
+                        roundness: 0.5
+                    }
+                }
+            };
+
+            switch (layout) {
+                case 'hierarchical':
+                    return {
+                        ...baseOptions,
+                        layout: {
+                            hierarchical: {
+                                direction: 'UD',
+                                sortMethod: 'directed',
+                                levelSeparation: 150,
+                                nodeSpacing: 200
+                            }
+                        },
+                        physics: { enabled: false }
+                    };
+                case 'circular':
+                    return {
+                        ...baseOptions,
+                        layout: {
+                            randomSeed: 2
+                        },
+                        physics: {
+                            solver: 'forceAtlas2Based',
+                            forceAtlas2Based: {
+                                gravitationalConstant: -50,
+                                centralGravity: 0.01,
+                                springLength: 200,
+                                springConstant: 0.08
+                            },
+                            stabilization: { iterations: 100 }
+                        }
+                    };
+                default: // force
+                    return baseOptions;
+            }
+        }
+
+        function changeLayout() {
+            if (network && familyData) {
+                const options = getNetworkOptions();
+                network.setOptions(options);
+                network.fit();
+            }
+        }
+
+        function changeView() {
+            loadFamilyTree();
+        }
+
+        function refreshTree() {
+            loadFamilyTree();
+        }
+
+        function clearGraph() {
+            const container = document.getElementById('familyTreeGraph');
+            container.innerHTML = '<div class="loading">Please login to view family tree</div>';
+            familyData = null;
+            network = null;
+            updateStats(null);
+        }
+
+        // Family members functions
+        async function loadFamilyMembers() {
+            if (!authToken) return;
+
+            try {
+                const response = await axios.get(`${API_BASE}/family/members`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (response.data.success) {
+                    renderFamilyMembers(response.data.data);
+                }
+            } catch (error) {
+                console.error('Load family members error:', error);
+            }
+        }
+
+        function renderFamilyMembers(data) {
+            const memberList = document.getElementById('memberList');
+            memberList.innerHTML = '';
+
+            // Add current user
+            const currentUserItem = document.createElement('div');
+            currentUserItem.className = 'member-item';
+            currentUserItem.innerHTML = `
+                <div class="member-name">${data.currentUser.firstName} ${data.currentUser.lastName} (You)</div>
+                <div class="member-details">${data.currentUser.email}</div>
+            `;
+            memberList.appendChild(currentUserItem);
+
+            // Add family members
+            data.familyMembers.forEach(member => {
+                const memberItem = document.createElement('div');
+                memberItem.className = 'member-item';
+                memberItem.innerHTML = `
+                    <div class="member-name">${member.user.firstName} ${member.user.lastName}</div>
+                    <div class="member-relationship">${member.relationship}</div>
+                    <div class="member-details">${member.user.email}</div>
+                `;
+                memberList.appendChild(memberItem);
+            });
+        }
+
+        async function loadRelationshipTypes() {
+            try {
+                const response = await axios.get(`${API_BASE}/family/relationship-types`, {
+                    headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+                });
+
+                if (response.data.success) {
+                    const select = document.getElementById('memberRelationship');
+                    select.innerHTML = '<option value="">Select relationship...</option>';
+                    
+                    response.data.data.relationshipTypes.forEach(type => {
+                        const option = document.createElement('option');
+                        option.value = type.value;
+                        option.textContent = type.label;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Load relationship types error:', error);
+            }
+        }
+
+        async function addFamilyMember() {
+            if (!authToken) {
+                showNotification('Please login first', 'error');
+                return;
+            }
+
+            const memberData = {
+                firstName: document.getElementById('memberFirstName').value,
+                lastName: document.getElementById('memberLastName').value,
+                email: document.getElementById('memberEmail').value,
+                relationshipType: document.getElementById('memberRelationship').value,
+                gender: document.getElementById('memberGender').value,
+                dateOfBirth: document.getElementById('memberDateOfBirth').value,
+                location: document.getElementById('memberLocation').value
+            };
+
+            // Validate required fields
+            if (!memberData.firstName || !memberData.lastName || !memberData.email || 
+                !memberData.relationshipType || !memberData.gender) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await axios.post(`${API_BASE}/family/member`, memberData, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (response.data.success) {
+                    showNotification('Family member added successfully!', 'success');
+                    hideAddMemberForm();
+                    clearAddMemberForm();
+                    loadFamilyTree();
+                } else {
+                    throw new Error('Failed to add family member');
+                }
+            } catch (error) {
+                console.error('Add family member error:', error);
+                showNotification(error.response?.data?.message || 'Failed to add family member', 'error');
+            }
+        }
+
+        // UI helper functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function showAddMemberForm() {
+            if (!authToken) {
+                showNotification('Please login first', 'error');
+                return;
+            }
+            
+            document.getElementById('addMemberForm').style.display = 'block';
+            document.getElementById('sidebar').classList.add('active');
+        }
+
+        function hideAddMemberForm() {
+            document.getElementById('addMemberForm').style.display = 'none';
+        }
+
+        function clearAddMemberForm() {
+            document.getElementById('memberFirstName').value = '';
+            document.getElementById('memberLastName').value = '';
+            document.getElementById('memberEmail').value = '';
+            document.getElementById('memberRelationship').value = '';
+            document.getElementById('memberGender').value = '';
+            document.getElementById('memberDateOfBirth').value = '';
+            document.getElementById('memberLocation').value = '';
+        }
+
+        function updateStats(data) {
+            if (!data) {
+                document.getElementById('totalMembers').textContent = '0';
+                document.getElementById('ancestorCount').textContent = '0';
+                document.getElementById('descendantCount').textContent = '0';
+                document.getElementById('adjacentCount').textContent = '0';
+                return;
+            }
+
+            document.getElementById('totalMembers').textContent = data.totalMembers || 0;
+            document.getElementById('ancestorCount').textContent = data.ancestors?.length || 0;
+            document.getElementById('descendantCount').textContent = data.descendants?.length || 0;
+            document.getElementById('adjacentCount').textContent = data.adjacent?.length || 0;
+        }
+
+        function showNodeDetails(nodeId) {
+            if (!familyData) return;
+
+            let user = null;
+            let relationship = 'Current User';
+
+            if (nodeId === familyData.currentUser.id) {
+                user = familyData.currentUser;
+            } else {
+                // Find user in family members
+                const allMembers = [...familyData.ancestors, ...familyData.descendants, ...familyData.adjacent];
+                const member = allMembers.find(m => m.user.id === nodeId);
+                if (member) {
+                    user = member.user;
+                    relationship = member.relationship;
+                }
+            }
+
+            if (user) {
+                alert(`Name: ${user.firstName} ${user.lastName}
+Relationship: ${relationship}
+Email: ${user.email}
+Gender: ${user.gender}
+${user.dateOfBirth ? `Date of Birth: ${user.dateOfBirth}` : ''}
+${user.location ? `Location: ${user.location}` : ''}`);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Handle Enter key for login
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && document.getElementById('loginForm').style.display !== 'none') {
+                login();
+            }
+        });
     </script>
 </body>
 </html>

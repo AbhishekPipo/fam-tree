@@ -5,10 +5,9 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./src/config/swagger');
 require('dotenv').config();
 
-const { sequelize } = require('./src/models');
+const database = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const familyRoutes = require('./src/routes/familyRoutes');
-const graphRoutes = require('./src/routes/graphRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -83,7 +82,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
-app.use('/api/graph', graphRoutes);
 
 // Swagger JSON endpoint
 app.get('/api-docs/swagger.json', (req, res) => {
@@ -95,7 +93,7 @@ app.get('/api-docs/swagger.json', (req, res) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Family Tree API Documentation',
+  customSiteTitle: 'Family Tree Neo4j API Documentation',
   swaggerOptions: {
     docExpansion: 'none',
     defaultModelsExpandDepth: -1,
@@ -114,7 +112,7 @@ app.get('/', (req, res) => {
  * /api/health:
  *   get:
  *     summary: Health check endpoint
- *     description: Returns the current status of the Family Tree API
+ *     description: Returns the current status of the Family Tree Neo4j API
  *     tags: [System]
  *     security: []
  *     responses:
@@ -130,23 +128,41 @@ app.get('/', (req, res) => {
  *                   example: OK
  *                 message:
  *                   type: string
- *                   example: Family Tree API is running
+ *                   example: Family Tree Neo4j API is running
+ *                 database:
+ *                   type: string
+ *                   example: Neo4j Connected
  *                 timestamp:
  *                   type: string
  *                   format: date-time
- *                   example: 2025-08-12T07:30:00.000Z
+ *                   example: 2025-01-15T07:30:00.000Z
  *             example:
  *               status: "OK"
- *               message: "Family Tree API is running"
- *               timestamp: "2025-08-12T07:30:00.000Z"
+ *               message: "Family Tree Neo4j API is running"
+ *               database: "Neo4j Connected"
+ *               timestamp: "2025-01-15T07:30:00.000Z"
  */
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Family Tree API is running',
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await database.runQuery('RETURN 1 as test');
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Family Tree Neo4j API is running',
+      database: 'Neo4j Connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Family Tree Neo4j API is running but database connection failed',
+      database: 'Neo4j Disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Error handling middleware
@@ -163,20 +179,23 @@ app.use('*', (req, res) => {
 // Start server
 const startServer = async () => {
   try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('✅ Database connection established successfully');
-    
-    // Sync database (create tables if they don't exist)
-    await sequelize.sync();
-    console.log('✅ Database synchronized successfully');
+    // Connect to Neo4j database
+    await database.connect();
+    console.log('✅ Neo4j database connection established successfully');
     
     app.listen(PORT, () => {
-      console.log(`🌳 Family Tree Server running on port ${PORT}`);
+      console.log(`🌳 Family Tree Neo4j Server running on port ${PORT}`);
       console.log(`🔗 API URL: http://localhost:${PORT}/api`);
-      console.log(`� API Documentation: http://localhost:${PORT}/api-docs`);
+      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
       console.log(`🌐 Web Interface: http://localhost:${PORT}`);
-      console.log(`�💊 Health Check: http://localhost:${PORT}/api/health`);
+      console.log(`💊 Health Check: http://localhost:${PORT}/api/health`);
+      console.log(`
+🎯 Quick Start:
+1. Setup database: npm run setup-db
+2. Seed with sample data: npm run seed
+3. Visit API docs: http://localhost:${PORT}/api-docs
+4. Test login with: prashanth@family.com / FamilyTree123!
+      `);
     });
   } catch (error) {
     console.error('❌ Unable to start server:', error);
@@ -189,12 +208,14 @@ startServer();
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('🛑 SIGTERM received, shutting down gracefully');
-  await sequelize.close();
+  await database.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('🛑 SIGINT received, shutting down gracefully');
-  await sequelize.close();
+  await database.close();
   process.exit(0);
 });
+
+module.exports = app;
