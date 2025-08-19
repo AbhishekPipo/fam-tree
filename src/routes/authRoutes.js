@@ -7,18 +7,19 @@ const {
   updateProfile
 } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
-const { validateUserRegistration, validateUserLogin } = require('../middleware/validation');
+const { authLimiter } = require('../middleware/rateLimiter');
+const { userSchemas, validate } = require('../validation/schemas');
 
 const router = express.Router();
 
-// Public routes
-router.post('/register', validateUserRegistration, register);
-router.post('/login', validateUserLogin, login);
+// Public routes with rate limiting
+router.post('/register', authLimiter, validate(userSchemas.register), register);
+router.post('/login', authLimiter, validate(userSchemas.login), login);
 
 // Protected routes
 router.use(authenticateToken);
 router.post('/logout', logout);
 router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.put('/profile', validate(userSchemas.updateProfile), updateProfile);
 
 module.exports = router;

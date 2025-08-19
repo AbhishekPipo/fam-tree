@@ -2,28 +2,57 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const database = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
+const Person = require('./Person');
 
-class User {
+class User extends Person {
   constructor(data) {
-    this.id = data.id || uuidv4();
-    this.firstName = data.firstName;
-    this.middleName = data.middleName;
-    this.lastName = data.lastName;
-    this.email = data.email;
+    // Call parent constructor with person data
+    super(data);
+    
+    // User-specific properties
+    // Authentication
     this.password = data.password;
-    this.dateOfBirth = data.dateOfBirth;
-    this.gender = data.gender;
-    this.location = data.location;
-    this.profilePicture = data.profilePicture;
-    this.hasMedication = data.hasMedication || false;
-    this.medicationName = data.medicationName;
-    this.medicationFrequency = data.medicationFrequency;
-    this.medicationTime = data.medicationTime;
-    this.isOnline = data.isOnline || false;
-    this.isDeceased = data.isDeceased || false;
-    this.staysWithUser = data.staysWithUser || false;
-    this.createdAt = data.createdAt || new Date().toISOString();
-    this.updatedAt = data.updatedAt || new Date().toISOString();
+    this.passwordResetToken = data.passwordResetToken || null;
+    this.passwordResetExpires = data.passwordResetExpires || null;
+    
+    // Authorization
+    this.role = data.role || 'member';
+    this.permissions = data.permissions || [];
+    
+    // Account Status
+    this.isActive = data.isActive !== undefined ? data.isActive : true;
+    this.isEmailVerified = data.isEmailVerified || false;
+    this.emailVerificationToken = data.emailVerificationToken || null;
+    
+    // Preferences
+    this.preferences = data.preferences || {
+      language: 'en',
+      timezone: 'UTC',
+      dateFormat: 'YYYY-MM-DD',
+      notifications: {
+        email: true,
+        push: true,
+        sms: false
+      },
+      privacy: {
+        showEmail: false,
+        showPhone: false,
+        showBirthDate: true
+      }
+    };
+    
+    // Session Management
+    this.lastLoginAt = data.lastLoginAt || null;
+    this.loginCount = data.loginCount || 0;
+    this.sessionTokens = data.sessionTokens || [];
+    
+    // Family Tree Management
+    this.ownedTrees = data.ownedTrees || [];
+    this.memberOfTrees = data.memberOfTrees || [];
+    
+    // Subscription/Premium
+    this.subscriptionType = data.subscriptionType || 'free';
+    this.subscriptionExpires = data.subscriptionExpires || null;
   }
 
   // Hash password before saving
@@ -51,20 +80,61 @@ class User {
     return userWithoutPassword;
   }
 
-  // Save user to Neo4j
+  // Override parent validation to include user-specific rules
+  validate() {
+    const errors = super.validate(); // Call parent validation
+
+    // User-specific validation
+    if (!this.email || !this.isValidEmail(this.email)) {
+      errors.push('Valid email is required for users');
+    }
+
+    if (!this.password || this.password.length < 6) {
+      errors.push('Password must be at least 6 characters long');
+    }
+
+    const validRoles = ['admin', 'moderator', 'member'];
+    if (!validRoles.includes(this.role)) {
+      errors.push('Invalid user role');
+    }
+
+    const validSubscriptionTypes = ['free', 'premium', 'family'];
+    if (!validSubscriptionTypes.includes(this.subscriptionType)) {
+      errors.push('Invalid subscription type');
+    }
+
+    return errors;
+  }
+
+  // Override toJSON to exclude sensitive data
+  toJSON() {
+    const json = super.toJSON();
+    // Remove sensitive fields from JSON output
+    delete json.password;
+    delete json.passwordResetToken;
+    delete json.sessionTokens;
+    return json;
+  }
+
+  // Save user to Neo4j with both User and Person labels
   async save() {
+    const errors = this.validate();
+    if (errors.length > 0) {
+      throw new AppError(`Validation failed: ${errors.join(', ')}`, 400, 'VALIDATION_ERROR');
+    }
+
     await this.hashPassword();
     this.updatedAt = new Date().toISOString();
 
     const cypher = `
-      MERGE (u:User {id: $id})
+      MERGE (u:User:Person {id: $id})
       SET u += $properties
       RETURN u
     `;
 
     const result = await database.runQuery(cypher, {
       id: this.id,
-      properties: this.toJSON()
+      properties: { ...this, password: this.password } // Include password for storage
     });
 
     if (result.records.length === 0) {

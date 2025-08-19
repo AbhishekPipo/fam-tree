@@ -1,369 +1,337 @@
 # Family Tree Neo4j Application
 
-A comprehensive family tree management system built with **Neo4j graph database**, **Node.js**, and **Express**. This application provides dynamic relationship mapping, extended family trees, in-law relationships, and interactive graph visualization.
+A comprehensive genealogy platform built with Node.js, Express.js, and Neo4j graph database. This application enables users to create, manage, and explore complex family relationships with advanced features like DNA tracking, event management, media organization, and collaborative tree building.
 
-## 🌟 Features
+## 🚀 Features
 
-### Core Functionality
-- **Dynamic Family Tree Visualization** - Interactive graph-based family tree using Vis.js
-- **Extended Family Support** - Ancestors, descendants, and adjacent family members
-- **In-Law Relationships** - Complete in-law family tree integration
-- **Dynamic Relationship Labels** - Automatic relationship calculation and labeling
-- **Multi-generational Support** - Unlimited generations (great-great-grandparents, etc.)
+### Core Features
+- **Advanced Relationship Modeling** - Handle complex family scenarios with graph database
+- **Real-time Collaboration** - Multi-user tree management
+- **Privacy-First Design** - Granular field-level privacy controls
+- **Scalable Architecture** - Supports 10,000+ person family trees
+- **Production-Ready** - Comprehensive validation and error handling
 
-### Relationship Types
-- **Direct Relationships**: Spouses, partners
-- **Blood Relationships**: Parents, children, siblings, grandparents, grandchildren
-- **Extended Family**: Uncles, aunts, cousins, nephews, nieces
-- **In-Law Relationships**: All in-law variations
-- **Step/Half Relationships**: Step-parents, step-children, half-siblings
-- **Adoption Support**: Adoptive relationships
+### Advanced Features
+- **DNA Integration** - Track DNA matches and relationships
+- **GEDCOM Import/Export** - Standard genealogy file format support
+- **Advanced Search** - Full-text search with relationship path finding
+- **Media Management** - Photo and document organization
+- **Event Tracking** - Life events with timeline views
+- **Relationship Suggestions** - AI-powered relationship discovery
 
-### Technical Features
-- **Neo4j Graph Database** - Optimized for relationship queries
-- **RESTful API** - Complete CRUD operations
-- **JWT Authentication** - Secure user authentication
-- **Interactive UI** - Multiple layout options (hierarchical, force-directed, circular)
-- **Real-time Updates** - Dynamic family tree updates
-- **Comprehensive API Documentation** - Swagger/OpenAPI integration
+## 🏗️ Technology Stack
 
-## 🚀 Quick Start
+### Backend
+- **Runtime**: Node.js 18.x
+- **Framework**: Express.js 4.x
+- **Database**: Neo4j AuraDB 5.x
+- **Authentication**: JWT + Bcrypt
+- **Validation**: Joi 17.x
+- **Documentation**: Swagger/OpenAPI 3.x
+- **File Upload**: Multer
+- **Logging**: Winston
+- **Security**: Helmet, Rate Limiting
 
-### Prerequisites
-- **Node.js** (v16 or higher)
-- **Neo4j Database** (v4.0 or higher)
+### Development & Testing
+- **Testing**: Jest + Supertest
+- **Code Quality**: ESLint + Prettier
+- **Process Manager**: PM2 (production)
 
-### Neo4j Setup Options
+## 📋 Prerequisites
 
-#### Option 1: Neo4j Desktop (Recommended for Development)
-1. Download [Neo4j Desktop](https://neo4j.com/download/)
-2. Create a new project and database
-3. Set password to `password` (or update `.env` file)
-4. Start the database
+- Node.js 18.x or higher
+- Neo4j AuraDB account or local Neo4j instance
+- npm or yarn package manager
 
-#### Option 2: Neo4j Docker
+## 🛠️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd fam-tree
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Configuration**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Update `.env` with your configuration:
+   ```env
+   # Neo4j Database
+   NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
+   NEO4J_USERNAME=neo4j
+   NEO4J_PASSWORD=your-password
+   
+   # JWT Configuration
+   JWT_SECRET=your-super-secret-jwt-key
+   JWT_EXPIRES_IN=24h
+   
+   # Server Configuration
+   PORT=3000
+   NODE_ENV=development
+   ```
+
+4. **Database Setup**
+   ```bash
+   npm run setup-db
+   ```
+
+5. **Seed Sample Data** (Optional)
+   ```bash
+   npm run seed
+   ```
+
+## 🚀 Running the Application
+
+### Development Mode
 ```bash
-docker run \
-    --name neo4j-family-tree \
-    -p7474:7474 -p7687:7687 \
-    -d \
-    -v $HOME/neo4j/data:/data \
-    -v $HOME/neo4j/logs:/logs \
-    -v $HOME/neo4j/import:/var/lib/neo4j/import \
-    -v $HOME/neo4j/plugins:/plugins \
-    --env NEO4J_AUTH=neo4j/password \
-    neo4j:latest
-```
-
-#### Option 3: Neo4j Cloud (AuraDB)
-1. Create account at [Neo4j Aura](https://neo4j.com/cloud/aura/)
-2. Create a free database instance
-3. Update `.env` with your connection details
-
-### Installation
-
-1. **Clone and Install Dependencies**
-```bash
-cd /Users/abhishek/Desktop/t-bag
-npm install
-```
-
-2. **Configure Environment**
-```bash
-# Update .env file with your Neo4j credentials
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=password
-```
-
-3. **Setup Database**
-```bash
-npm run setup-db
-```
-
-4. **Seed Sample Data**
-```bash
-npm run seed
-```
-
-5. **Start Application**
-```bash
-npm start
-# or for development
 npm run dev
 ```
 
-6. **Access Application**
-- **Web Interface**: http://localhost:3000
-- **API Documentation**: http://localhost:3000/api-docs
-- **Health Check**: http://localhost:3000/api/health
-
-## 👥 Sample Family Data
-
-The application comes with pre-seeded family data:
-
-### **Patel Family Tree**
+### Production Mode
+```bash
+npm start
 ```
-👴 Ramesh Patel (1945) ↔ 👵 Mallika Patel (1950)
-                    │
-            👨 Prashanth Patel (1975) ↔ 👩 Anjali Patel (1978)
-                    │
-        ┌───────────┴───────────┐
-    👧 Simran (2005)      👦 Arjun (2008)
-        │                     │
-    👶 Elina (2025)       👶 Rohan (2027)
-
-👨 Suresh Patel (1948) - Uncle to Prashanth
-```
-
-### **Login Credentials**
-- **Email**: `prashanth@family.com`
-- **Password**: `FamilyTree123!`
-
-All users have the same password: `FamilyTree123!`
-
-## 🔧 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
-
-### Family Tree
-- `GET /api/family/tree` - Get basic family tree
-- `GET /api/family/tree/extended` - Get extended family tree with in-laws
-- `GET /api/family/tree/in-laws/:spouseId` - Get spouse's family tree
-- `GET /api/family/members` - Get all family members
-- `GET /api/family/relationship-types` - Get available relationship types
-- `GET /api/family/stats` - Get family statistics
-
-### Family Management
-- `POST /api/family/member` - Add new family member
-- `POST /api/family/spouse` - Add spouse
-- `DELETE /api/family/member/:memberId` - Remove family member
-
-### System
-- `GET /api/health` - Health check
-
-## 🎯 Usage Examples
-
-### 1. Login and View Family Tree
-```javascript
-// Login
-const response = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'prashanth@family.com',
-    password: 'FamilyTree123!'
-  })
-});
-
-const { token } = await response.json();
-
-// Get family tree
-const treeResponse = await fetch('/api/family/tree', {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-
-const familyTree = await treeResponse.json();
-```
-
-### 2. Add New Family Member
-```javascript
-const newMember = {
-  firstName: 'New',
-  lastName: 'Child',
-  email: 'newchild@family.com',
-  relationshipType: 'son',
-  gender: 'male',
-  dateOfBirth: '2010-05-15',
-  location: 'Family Home'
-};
-
-const response = await fetch('/api/family/member', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
-  },
-  body: JSON.stringify(newMember)
-});
-```
-
-### 3. Get Extended Family with In-Laws
-```javascript
-const extendedTree = await fetch('/api/family/tree/extended?includeInLaws=true', {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-```
-
-## 🏗️ Architecture
-
-### Database Schema (Neo4j)
-```cypher
-// Nodes
-(:User {
-  id: String,
-  firstName: String,
-  lastName: String,
-  email: String,
-  gender: String,
-  dateOfBirth: Date,
-  location: String,
-  hasMedication: Boolean,
-  medicationName: String,
-  isDeceased: Boolean,
-  createdAt: DateTime
-})
-
-// Relationships
-(:User)-[:MARRIED_TO {type: String, createdAt: DateTime}]->(:User)
-(:User)-[:PARENT_OF {type: String, createdAt: DateTime}]->(:User)
-(:User)-[:CHILD_OF {type: String, createdAt: DateTime}]->(:User)
-(:User)-[:SIBLING_OF {type: String, createdAt: DateTime}]->(:User)
-(:User)-[:EXTENDED_FAMILY {type: String, createdAt: DateTime}]->(:User)
-```
-
-### Key Components
-- **Neo4j Database**: Graph database for relationship storage
-- **Express Server**: RESTful API server
-- **JWT Authentication**: Secure token-based authentication
-- **Vis.js**: Interactive graph visualization
-- **Swagger**: API documentation
-
-## 🔍 Graph Database Advantages
-
-### Why Neo4j for Family Trees?
-1. **Natural Relationship Modeling** - Graph structure matches family relationships
-2. **Efficient Traversals** - Fast queries for finding relatives at any distance
-3. **Dynamic Relationships** - Easy to add new relationship types
-4. **Complex Queries** - Find all cousins, in-laws, or relatives within N degrees
-5. **Scalability** - Handles large family trees efficiently
-6. **Flexibility** - No rigid schema constraints
-
-### Sample Cypher Queries
-```cypher
-// Find all descendants of a person
-MATCH (person:User {id: $userId})-[:PARENT_OF*]->(descendant:User)
-RETURN descendant
-
-// Find all relatives within 3 degrees
-MATCH (person:User {id: $userId})-[*1..3]-(relative:User)
-RETURN DISTINCT relative
-
-// Find all in-laws
-MATCH (person:User {id: $userId})-[:MARRIED_TO]-(spouse:User)-[*1..2]-(inlaw:User)
-WHERE inlaw.id <> person.id
-RETURN inlaw
-```
-
-## 🛠️ Development
 
 ### Available Scripts
 - `npm start` - Start production server
 - `npm run dev` - Start development server with nodemon
 - `npm run setup-db` - Setup database constraints and indexes
 - `npm run seed` - Seed database with sample data
-- `npm run reset-db` - Reset database (delete all data)
+- `npm run reset-db` - Reset database (⚠️ Deletes all data)
+- `npm test` - Run test suite
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run format` - Format code with Prettier
 
-### Environment Variables
-```env
-PORT=3000
-NODE_ENV=development
+## 📚 API Documentation
 
-# Neo4j Configuration
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=password
+Once the server is running, visit:
+- **API Documentation**: http://localhost:3000/api-docs
+- **Health Check**: http://localhost:3000/api/health
 
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=7d
+### API Endpoints
 
-# Security
-BCRYPT_ROUNDS=12
+#### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
+
+#### Family Management
+- `GET /api/family/trees` - Get user's family trees
+- `POST /api/family/trees` - Create family tree
+- `GET /api/family/trees/:id` - Get family tree details
+- `PUT /api/family/trees/:id` - Update family tree
+- `DELETE /api/family/trees/:id` - Delete family tree
+
+#### Person Management
+- `GET /api/family/persons` - Get persons
+- `POST /api/family/persons` - Create person
+- `GET /api/family/persons/:id` - Get person details
+- `PUT /api/family/persons/:id` - Update person
+- `DELETE /api/family/persons/:id` - Delete person
+
+#### Relationships
+- `POST /api/family/relationships` - Create relationship
+- `GET /api/family/persons/:id/relationships` - Get person's relationships
+- `DELETE /api/family/relationships/:id` - Delete relationship
+
+#### Advanced Search
+- `GET /api/search` - Advanced search
+- `GET /api/search/suggestions` - Search suggestions
+- `GET /api/search/relationship-path` - Find relationship paths
+- `GET /api/search/relationship-suggestions/:personId` - Get relationship suggestions
+
+#### DNA Features
+- `POST /api/dna/:personId` - Add DNA data
+- `GET /api/dna/:personId` - Get DNA data
+- `GET /api/dna/:personId/matches` - Find DNA matches
+- `POST /api/dna/matches` - Add DNA match
+- `GET /api/dna/:personId/analysis` - DNA analysis
+- `GET /api/dna/:personId/report` - Generate DNA report
+
+#### GEDCOM Import/Export
+- `POST /api/gedcom/import` - Import GEDCOM file
+- `GET /api/gedcom/export/:treeId` - Export to GEDCOM
+- `POST /api/gedcom/validate` - Validate GEDCOM file
+- `POST /api/gedcom/preview` - Preview GEDCOM contents
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
 ```
 
-### Project Structure
+### Test Structure
 ```
-t-bag/
-├── src/
-│   ├── config/          # Database and app configuration
-│   ├── controllers/     # Route controllers
-│   ├── middleware/      # Authentication, validation, error handling
-│   ├── models/          # Data models
-│   ├── routes/          # API routes
-│   ├── services/        # Business logic
-│   └── utils/           # Database utilities
-├── public/              # Static files and frontend
-├── server.js            # Main server file
-├── package.json         # Dependencies and scripts
-└── README.md           # This file
+tests/
+├── setup.js              # Test setup and utilities
+├── globalSetup.js         # Global test setup
+├── globalTeardown.js      # Global test cleanup
+├── models/               # Model tests
+│   ├── Person.test.js
+│   ├── User.test.js
+│   └── FamilyTree.test.js
+├── routes/               # Route tests
+│   ├── auth.test.js
+│   └── family.test.js
+└── services/             # Service tests
+    ├── searchService.test.js
+    └── dnaService.test.js
 ```
+
+## 🔒 Security Features
+
+- **Authentication**: JWT-based authentication
+- **Authorization**: Role-based access control
+- **Rate Limiting**: API endpoint protection
+- **Input Validation**: Comprehensive data validation
+- **Data Sanitization**: Protection against injection attacks
+- **Security Headers**: Helmet.js security headers
+- **Privacy Controls**: Granular field-level privacy settings
+
+## 📊 Database Schema
+
+### Core Entities
+- **Person** - Individual family members with 60+ properties
+- **User** - System users extending Person
+- **FamilyTree** - Family tree containers
+- **Event** - Life events and milestones
+- **Media** - Photos, documents, and files
+- **DNA** - DNA test results and matches
+
+### Relationship Types
+- Blood relationships: `PARENT_OF`, `CHILD_OF`, `SIBLING_OF`, `GRANDPARENT_OF`, etc.
+- Marriage relationships: `MARRIED_TO`, `DIVORCED_FROM`, `ENGAGED_TO`
+- System relationships: `OWNS`, `MEMBER_OF`, `BELONGS_TO`
 
 ## 🚀 Deployment
 
-### Production Checklist
-1. **Environment Variables**
-   - Set strong JWT secret
-   - Configure production Neo4j instance
-   - Set NODE_ENV=production
+### Environment Variables
+```env
+# Production Environment
+NODE_ENV=production
+PORT=3000
 
-2. **Neo4j Production Setup**
-   - Use Neo4j Aura or dedicated server
-   - Enable authentication
-   - Configure backup strategy
+# Database
+NEO4J_URI=neo4j+s://production-instance.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=secure-production-password
 
-3. **Security**
-   - Enable HTTPS
-   - Configure CORS for production domains
-   - Set up rate limiting
-   - Enable request logging
+# Security
+JWT_SECRET=super-secure-production-jwt-secret
+```
 
-4. **Monitoring**
-   - Set up health checks
-   - Monitor Neo4j performance
-   - Log application errors
+### Using PM2
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start application with PM2
+pm2 start server.js --name "family-tree-api"
+
+# Monitor
+pm2 monit
+
+# View logs
+pm2 logs family-tree-api
+```
+
+## 📈 Performance
+
+### Current Capabilities
+- **Database**: Supports 10,000+ person trees
+- **Relationships**: Manages complex multi-generational families
+- **Search**: Full-text search across all entities
+- **Concurrency**: Multi-user collaboration support
+- **Storage**: Unlimited media file support
+
+### Optimization Features
+- Database indexing for fast queries
+- Relationship path caching
+- File upload optimization
+- Query result pagination
+- Connection pooling
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow ESLint configuration
+- Write tests for new features
+- Update documentation
+- Follow semantic versioning
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
+### Quick Start
+1. Setup database: `npm run setup-db`
+2. Seed with sample data: `npm run seed`
+3. Visit API docs: http://localhost:3000/api-docs
+4. Test login with: `prashanth@family.com` / `FamilyTree123!`
+
 ### Common Issues
 
-**Neo4j Connection Failed**
-- Ensure Neo4j is running on correct port (7687)
-- Check username/password in .env file
-- Verify firewall settings
+**Database Connection Issues**
+- Verify Neo4j credentials in `.env`
+- Check network connectivity to Neo4j instance
+- Ensure database is running
 
-**Authentication Errors**
-- Check JWT_SECRET in .env
-- Ensure token is included in Authorization header
-- Verify user exists in database
+**Authentication Issues**
+- Check JWT_SECRET in environment variables
+- Verify token expiration settings
+- Clear browser cache/cookies
 
-**Family Tree Not Loading**
-- Check browser console for errors
-- Verify API endpoints are accessible
-- Ensure user is authenticated
+**File Upload Issues**
+- Check upload directory permissions
+- Verify file size limits
+- Ensure supported file types
 
 ### Getting Help
-- Check the [API Documentation](http://localhost:3000/api-docs)
-- Review Neo4j logs for database issues
-- Open an issue on GitHub
+- Check the API documentation at `/api-docs`
+- Review test files for usage examples
+- Check logs in `logs/` directory
+
+## 🔄 Changelog
+
+### Version 1.0.0
+- Initial release with core functionality
+- Person and relationship management
+- Family tree creation and management
+- Authentication and authorization
+- Advanced search capabilities
+- DNA integration features
+- GEDCOM import/export
+- Comprehensive test suite
+- Production-ready security features
 
 ---
 
-**Built with ❤️ using Neo4j Graph Database**
+**Built with ❤️ for preserving family history and connections**

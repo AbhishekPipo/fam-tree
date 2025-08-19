@@ -10,3 +10,30 @@ coverage/
 dist/
 build/
 src/config/config.json
+
+# Temporary files
+*.tmp
+*.temp
+*Response.json
+actualResponse.json
+expectedRes
+formattedResponse.json
+updatedResponse.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+.DS_Store?
+._*
+
+# Development tools
+.zencoder/
+IMPLEMENTATION_SUMMARY.md
+
+# Test artifacts
+test-uploads/
