@@ -4,7 +4,9 @@ const {
   login,
   logout,
   getProfile,
-  updateProfile
+  updateProfile,
+  verifyOtp,
+  resendOtp
 } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
@@ -12,9 +14,11 @@ const { userSchemas, validate } = require('../validation/schemas');
 
 const router = express.Router();
 
-// Public routes with rate limiting
-router.post('/register', authLimiter, validate(userSchemas.register), register);
-router.post('/login', authLimiter, validate(userSchemas.login), login);
+// Phone authentication routes (now the main authentication method)
+router.post('/register', authLimiter, validate(userSchemas.phoneRegister), register);
+router.post('/login', authLimiter, validate(userSchemas.phoneLogin), login);
+router.post('/verify-otp', authLimiter, validate(userSchemas.verifyOtp), verifyOtp);
+router.post('/resend-otp', authLimiter, validate(userSchemas.resendOtp), resendOtp);
 
 // Protected routes
 router.use(authenticateToken);

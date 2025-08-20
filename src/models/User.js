@@ -15,6 +15,15 @@ class User extends Person {
     this.passwordResetToken = data.passwordResetToken || null;
     this.passwordResetExpires = data.passwordResetExpires || null;
     
+    // Phone Authentication - use inherited phone field from Person
+    if (data.phoneNumber) {
+      this.phone = data.phoneNumber; // Map phoneNumber to inherited phone field
+    }
+    this.isPhoneVerified = data.isPhoneVerified || false;
+    this.phoneOtp = data.phoneOtp || null;
+    this.phoneOtpExpires = data.phoneOtpExpires || null;
+    this.phoneOtpAttempts = data.phoneOtpAttempts || 0;
+    
     // Authorization
     this.role = data.role || 'member';
     this.permissions = data.permissions || [];
@@ -67,11 +76,63 @@ class User extends Person {
     return bcrypt.compare(candidatePassword, this.password);
   }
 
+  // Generate OTP for phone verification
+  generatePhoneOtp() {
+    // Generate 6-digit OTP (for now, static OTP for testing)
+    this.phoneOtp = '123456'; // Static OTP for development
+    this.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    this.phoneOtpAttempts = 0;
+    return this.phoneOtp;
+  }
+
+  // Verify OTP
+  verifyPhoneOtp(candidateOtp) {
+    if (!this.phoneOtp || !this.phoneOtpExpires) {
+      return false;
+    }
+
+    if (new Date() > new Date(this.phoneOtpExpires)) {
+      return false; // OTP expired
+    }
+
+    if (this.phoneOtpAttempts >= 3) {
+      return false; // Too many attempts
+    }
+
+    if (this.phoneOtp === candidateOtp) {
+      this.isPhoneVerified = true;
+      this.phoneOtp = null;
+      this.phoneOtpExpires = null;
+      this.phoneOtpAttempts = 0;
+      return true;
+    }
+
+    this.phoneOtpAttempts += 1;
+    return false;
+  }
+
+  // Clear OTP data
+  clearPhoneOtp() {
+    this.phoneOtp = null;
+    this.phoneOtpExpires = null;
+    this.phoneOtpAttempts = 0;
+  }
+
   // Get full name
   getFullName() {
     return this.middleName 
       ? `${this.firstName} ${this.middleName} ${this.lastName}`
       : `${this.firstName} ${this.lastName}`;
+  }
+
+  // Getter for phoneNumber (for API compatibility)
+  get phoneNumber() {
+    return this.phone;
+  }
+
+  // Setter for phoneNumber (for API compatibility)
+  set phoneNumber(value) {
+    this.phone = value;
   }
 
   // Convert to JSON (exclude password)
@@ -84,12 +145,21 @@ class User extends Person {
   validate() {
     const errors = super.validate(); // Call parent validation
 
-    // User-specific validation
-    if (!this.email || !this.isValidEmail(this.email)) {
-      errors.push('Valid email is required for users');
+    // User-specific validation - either email or phone number is required
+    if (!this.email && !this.phone) {
+      errors.push('Either email or phone number is required for users');
     }
 
-    if (!this.password || this.password.length < 6) {
+    if (this.email && !this.isValidEmail(this.email)) {
+      errors.push('Valid email format is required');
+    }
+
+    if (this.phone && !this.isValidPhoneNumber(this.phone)) {
+      errors.push('Valid phone number format is required');
+    }
+
+    // Password is optional for phone-only registration (will be set during OTP verification)
+    if (this.password && this.password.length < 6) {
       errors.push('Password must be at least 6 characters long');
     }
 
@@ -106,6 +176,12 @@ class User extends Person {
     return errors;
   }
 
+  // Phone number validation helper
+  isValidPhoneNumber(phone) {
+    const phoneRegex = /^\+?[\d\s\-\(\)]{10,15}$/;
+    return phoneRegex.test(phone);
+  }
+
   // Override toJSON to exclude sensitive data
   toJSON() {
     const json = super.toJSON();
@@ -113,6 +189,15 @@ class User extends Person {
     delete json.password;
     delete json.passwordResetToken;
     delete json.sessionTokens;
+    delete json.phoneOtp;
+    delete json.phoneOtpExpires;
+    delete json.phoneOtpAttempts;
+    
+    // Add phoneNumber for API compatibility (maps to phone field)
+    if (json.phone) {
+      json.phoneNumber = json.phone;
+    }
+    
     return json;
   }
 
@@ -123,19 +208,85 @@ class User extends Person {
       throw new AppError(`Validation failed: ${errors.join(', ')}`, 400, 'VALIDATION_ERROR');
     }
 
-    await this.hashPassword();
+    // Only hash password if it exists
+    if (this.password) {
+      await this.hashPassword();
+    }
     this.updatedAt = new Date().toISOString();
 
-    const cypher = `
-      MERGE (u:User:Person {id: $id})
-      SET u += $properties
-      RETURN u
-    `;
-
-    const result = await database.runQuery(cypher, {
-      id: this.id,
-      properties: { ...this, password: this.password } // Include password for storage
+    // Prepare properties for Neo4j storage (only primitive types)
+    const properties = {};
+    
+    // Copy primitive properties
+    const primitiveFields = [
+      'id', 'firstName', 'middleName', 'lastName', 'email', 'phone', 
+      'gender', 'dateOfBirth', 'dateOfDeath', 'isDeceased',
+      'profilePicture', 'height', 'eyeColor', 'hairColor', 'bloodType',
+      'isOnline', 'lastSeen', 'hasMedication', 'staysWithUser',
+      'role', 'isActive', 'isEmailVerified', 'emailVerificationToken',
+      'isPhoneVerified', 'phoneOtp', 'phoneOtpExpires', 'phoneOtpAttempts',
+      'passwordResetToken', 'passwordResetExpires', 'subscriptionType',
+      'createdAt', 'updatedAt'
+    ];
+    
+    primitiveFields.forEach(field => {
+      if (this[field] !== undefined && this[field] !== null) {
+        properties[field] = this[field];
+      }
     });
+    
+    // Add password if it exists
+    if (this.password) {
+      properties.password = this.password;
+    }
+    
+    // Convert complex objects to JSON strings for Neo4j storage
+    if (this.preferences && typeof this.preferences === 'object') {
+      properties.preferences = JSON.stringify(this.preferences);
+    }
+    if (this.address && typeof this.address === 'object') {
+      properties.address = JSON.stringify(this.address);
+    }
+    if (this.socialProfiles && typeof this.socialProfiles === 'object') {
+      properties.socialProfiles = JSON.stringify(this.socialProfiles);
+    }
+    if (this.medications && Array.isArray(this.medications)) {
+      properties.medications = JSON.stringify(this.medications);
+    }
+    if (this.medicalConditions && Array.isArray(this.medicalConditions)) {
+      properties.medicalConditions = JSON.stringify(this.medicalConditions);
+    }
+    if (this.allergies && Array.isArray(this.allergies)) {
+      properties.allergies = JSON.stringify(this.allergies);
+    }
+    if (this.permissions && Array.isArray(this.permissions)) {
+      properties.permissions = JSON.stringify(this.permissions);
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findById(this.id);
+    
+    let cypher, params;
+    if (existingUser) {
+      // Update existing user
+      cypher = `
+        MATCH (u:User {id: $id})
+        SET u += $properties
+        RETURN u
+      `;
+      params = { id: this.id, properties };
+    } else {
+      // Create new user - set properties individually to avoid Map{} issues
+      const setParts = Object.keys(properties).map(key => `u.${key} = $${key}`).join(', ');
+      cypher = `
+        CREATE (u:User:Person {id: $id})
+        SET ${setParts}
+        RETURN u
+      `;
+      params = { id: this.id, ...properties };
+    }
+
+    const result = await database.runQuery(cypher, params);
 
     if (result.records.length === 0) {
       throw new AppError('Failed to save user', 500, 'SAVE_FAILED');
@@ -159,6 +310,17 @@ class User extends Person {
   static async findByEmail(email) {
     const cypher = 'MATCH (u:User {email: $email}) RETURN u';
     const result = await database.runQuery(cypher, { email });
+    
+    if (result.records.length === 0) {
+      return null;
+    }
+
+    return database.constructor.extractNodeProperties(result.records[0], 'u');
+  }
+
+  static async findByPhoneNumber(phoneNumber) {
+    const cypher = 'MATCH (u:User {phone: $phoneNumber}) RETURN u';
+    const result = await database.runQuery(cypher, { phoneNumber });
     
     if (result.records.length === 0) {
       return null;

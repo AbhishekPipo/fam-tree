@@ -4,24 +4,20 @@ const Joi = require('joi');
 const patterns = {
   uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^\+?[\d\s\-\(\)]+$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+  phone: /^\+?[\d\s\-\(\)]{10,15}$/,
+  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  otp: /^\d{6}$/
 };
 
 // User validation schemas
 const userSchemas = {
-  register: Joi.object({
+  phoneRegister: Joi.object({
     firstName: Joi.string().trim().min(1).max(50).required(),
     middleName: Joi.string().trim().max(50).allow(null, ''),
     lastName: Joi.string().trim().min(1).max(50).required(),
-    email: Joi.string().email().pattern(patterns.email).required(),
-    password: Joi.string().pattern(patterns.password).required()
-      .messages({
-        'string.pattern.base': 'Password must contain at least 8 characters, including uppercase, lowercase, number and special character'
-      }),
+    phoneNumber: Joi.string().pattern(patterns.phone).required(),
     gender: Joi.string().valid('male', 'female', 'other').required(),
     dateOfBirth: Joi.date().iso().max('now').allow(null),
-    phone: Joi.string().pattern(patterns.phone).allow(null, ''),
     preferences: Joi.object({
       language: Joi.string().default('en'),
       timezone: Joi.string().default('UTC'),
@@ -29,7 +25,7 @@ const userSchemas = {
       notifications: Joi.object({
         email: Joi.boolean().default(true),
         push: Joi.boolean().default(true),
-        sms: Joi.boolean().default(false)
+        sms: Joi.boolean().default(true)
       }).default(),
       privacy: Joi.object({
         showEmail: Joi.boolean().default(false),
@@ -39,16 +35,30 @@ const userSchemas = {
     }).default()
   }),
 
-  login: Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().required()
+  phoneLogin: Joi.object({
+    phoneNumber: Joi.string().pattern(patterns.phone).required()
+  }),
+
+  verifyOtp: Joi.object({
+    phoneNumber: Joi.string().pattern(patterns.phone).required(),
+    otp: Joi.string().pattern(patterns.otp).required(),
+    password: Joi.string().min(6).when('isRegistration', {
+      is: true,
+      then: Joi.required(),
+      otherwise: Joi.optional()
+    }),
+    isRegistration: Joi.boolean().default(false)
+  }),
+
+  resendOtp: Joi.object({
+    phoneNumber: Joi.string().pattern(patterns.phone).required()
   }),
 
   updateProfile: Joi.object({
     firstName: Joi.string().trim().min(1).max(50),
     middleName: Joi.string().trim().max(50).allow(null, ''),
     lastName: Joi.string().trim().min(1).max(50),
-    phone: Joi.string().pattern(patterns.phone).allow(null, ''),
+    phoneNumber: Joi.string().pattern(patterns.phone).allow(null, ''),
     dateOfBirth: Joi.date().iso().max('now').allow(null),
     gender: Joi.string().valid('male', 'female', 'other'),
     occupation: Joi.string().max(100).allow(null, ''),

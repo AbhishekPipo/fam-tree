@@ -48,10 +48,15 @@ const options = {
               type: 'string',
               example: 'Doe'
             },
-            email: {
+            phoneNumber: {
               type: 'string',
-              format: 'email',
-              example: 'john.doe@family.com'
+              example: '+1234567890',
+              description: 'Primary authentication method'
+            },
+            isPhoneVerified: {
+              type: 'boolean',
+              example: true,
+              description: 'Whether phone number is verified'
             },
             dateOfBirth: {
               type: 'string',
@@ -98,6 +103,14 @@ const options = {
             staysWithUser: {
               type: 'boolean',
               example: false
+            },
+            role: {
+              type: 'string',
+              example: 'member'
+            },
+            isActive: {
+              type: 'boolean',
+              example: true
             },
             createdAt: {
               type: 'string',
@@ -162,7 +175,7 @@ const options = {
         },
         AddFamilyMemberRequest: {
           type: 'object',
-          required: ['firstName', 'lastName', 'email', 'relationshipType', 'gender'],
+          required: ['firstName', 'lastName', 'phoneNumber', 'relationshipType', 'gender'],
           properties: {
             firstName: {
               type: 'string',
@@ -176,10 +189,9 @@ const options = {
               type: 'string',
               example: 'Doe'
             },
-            email: {
+            phoneNumber: {
               type: 'string',
-              format: 'email',
-              example: 'jane.doe@family.com'
+              example: '+1234567890'
             },
             relationshipType: {
               type: 'string',

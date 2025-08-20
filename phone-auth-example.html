@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Authentication Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #17a2b8;
+            background-color: #d1ecf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .step {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .otp-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 18px;
+            text-align: center;
+            border: 2px dashed #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Phone Authentication Demo</h1>
+        <p>This demo shows how to implement phone number authentication with OTP verification.</p>
+        
+        <div id="messages"></div>
+
+        <!-- Step 1: Registration -->
+        <div class="step" id="step1">
+            <h3>Step 1: Register with Phone Number</h3>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="firstName">First Name:</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name:</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number:</label>
+                    <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="+1234567890" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender:</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth:</label>
+                    <input type="date" id="dateOfBirth" name="dateOfBirth">
+                </div>
+                <button type="submit">Register & Send OTP</button>
+            </form>
+        </div>
+
+        <!-- Step 2: OTP Verification -->
+        <div class="step hidden" id="step2">
+            <h3>Step 2: Verify OTP & Set Password</h3>
+            <div id="otpDisplay" class="otp-display hidden">
+                <strong>Development OTP: <span id="otpValue"></span></strong>
+                <br><small>In production, this would be sent via SMS</small>
+            </div>
+            <form id="verifyForm">
+                <div class="form-group">
+                    <label for="otp">Enter OTP:</label>
+                    <input type="text" id="otp" name="otp" maxlength="6" placeholder="123456" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Set Password:</label>
+                    <input type="password" id="password" name="password" minlength="6" required>
+                </div>
+                <button type="submit">Verify OTP & Complete Registration</button>
+                <button type="button" id="resendOtp">Resend OTP</button>
+            </form>
+        </div>
+
+        <!-- Step 3: Login -->
+        <div class="step hidden" id="step3">
+            <h3>Step 3: Login with Phone Number</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginPhone">Phone Number:</label>
+                    <input type="tel" id="loginPhone" name="phoneNumber" required>
+                </div>
+                <button type="submit">Send Login OTP</button>
+            </form>
+        </div>
+
+        <!-- Step 4: Login OTP Verification -->
+        <div class="step hidden" id="step4">
+            <h3>Step 4: Verify Login OTP</h3>
+            <div id="loginOtpDisplay" class="otp-display hidden">
+                <strong>Development OTP: <span id="loginOtpValue"></span></strong>
+                <br><small>In production, this would be sent via SMS</small>
+            </div>
+            <form id="loginVerifyForm">
+                <div class="form-group">
+                    <label for="loginOtp">Enter OTP:</label>
+                    <input type="text" id="loginOtp" name="otp" maxlength="6" placeholder="123456" required>
+                </div>
+                <button type="submit">Verify & Login</button>
+                <button type="button" id="resendLoginOtp">Resend OTP</button>
+            </form>
+        </div>
+
+        <!-- Success -->
+        <div class="step hidden" id="success">
+            <h3>✅ Authentication Successful!</h3>
+            <div id="userInfo"></div>
+            <button type="button" onclick="resetDemo()">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api/auth';
+        let currentPhoneNumber = '';
+        let authToken = '';
+
+        // Utility functions
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => messagesDiv.innerHTML = '', 5000);
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(step => step.classList.add('hidden'));
+            document.getElementById(stepId).classList.remove('hidden');
+        }
+
+        async function makeRequest(url, data) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP ${response.status}`);
+                }
+
+                return result;
+            } catch (error) {
+                console.error('Request failed:', error);
+                throw error;
+            }
+        }
+
+        // Step 1: Registration
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            currentPhoneNumber = data.phoneNumber;
+
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/register`, data);
+                
+                showMessage('✅ Registration successful! OTP sent to your phone.', 'success');
+                
+                if (result.data.otp) {
+                    document.getElementById('otpValue').textContent = result.data.otp;
+                    document.getElementById('otpDisplay').classList.remove('hidden');
+                }
+                
+                showStep('step2');
+            } catch (error) {
+                showMessage(`❌ Registration failed: ${error.message}`, 'error');
+            }
+        });
+
+        // Step 2: OTP Verification
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            data.phoneNumber = currentPhoneNumber;
+            data.isRegistration = true;
+
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/verify-otp`, data);
+                
+                authToken = result.data.token;
+                showMessage('✅ Registration completed! You are now logged in.', 'success');
+                
+                document.getElementById('userInfo').innerHTML = `
+                    <p><strong>Welcome, ${result.data.user.firstName} ${result.data.user.lastName}!</strong></p>
+                    <p>Phone: ${result.data.user.phoneNumber}</p>
+                    <p>Phone Verified: ${result.data.user.isPhoneVerified ? '✅' : '❌'}</p>
+                    <p>User ID: ${result.data.user.id}</p>
+                    <p>Token: ${authToken.substring(0, 20)}...</p>
+                `;
+                
+                showStep('success');
+            } catch (error) {
+                showMessage(`❌ OTP verification failed: ${error.message}`, 'error');
+            }
+        });
+
+        // Resend OTP
+        document.getElementById('resendOtp').addEventListener('click', async () => {
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/resend-otp`, {
+                    phoneNumber: currentPhoneNumber
+                });
+                
+                showMessage('✅ OTP resent successfully!', 'success');
+                
+                if (result.data.otp) {
+                    document.getElementById('otpValue').textContent = result.data.otp;
+                }
+            } catch (error) {
+                showMessage(`❌ Failed to resend OTP: ${error.message}`, 'error');
+            }
+        });
+
+        // Step 3: Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            currentPhoneNumber = data.phoneNumber;
+
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/login`, data);
+                
+                showMessage('✅ Login OTP sent to your phone!', 'success');
+                
+                if (result.data.otp) {
+                    document.getElementById('loginOtpValue').textContent = result.data.otp;
+                    document.getElementById('loginOtpDisplay').classList.remove('hidden');
+                }
+                
+                showStep('step4');
+            } catch (error) {
+                showMessage(`❌ Login failed: ${error.message}`, 'error');
+            }
+        });
+
+        // Step 4: Login OTP Verification
+        document.getElementById('loginVerifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            data.phoneNumber = currentPhoneNumber;
+            data.isRegistration = false;
+
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/verify-otp`, data);
+                
+                authToken = result.data.token;
+                showMessage('✅ Login successful!', 'success');
+                
+                document.getElementById('userInfo').innerHTML = `
+                    <p><strong>Welcome back, ${result.data.user.firstName} ${result.data.user.lastName}!</strong></p>
+                    <p>Phone: ${result.data.user.phoneNumber}</p>
+                    <p>Phone Verified: ${result.data.user.isPhoneVerified ? '✅' : '❌'}</p>
+                    <p>User ID: ${result.data.user.id}</p>
+                    <p>Token: ${authToken.substring(0, 20)}...</p>
+                `;
+                
+                showStep('success');
+            } catch (error) {
+                showMessage(`❌ Login verification failed: ${error.message}`, 'error');
+            }
+        });
+
+        // Resend Login OTP
+        document.getElementById('resendLoginOtp').addEventListener('click', async () => {
+            try {
+                const result = await makeRequest(`${API_BASE}/phone/resend-otp`, {
+                    phoneNumber: currentPhoneNumber
+                });
+                
+                showMessage('✅ Login OTP resent successfully!', 'success');
+                
+                if (result.data.otp) {
+                    document.getElementById('loginOtpValue').textContent = result.data.otp;
+                }
+            } catch (error) {
+                showMessage(`❌ Failed to resend login OTP: ${error.message}`, 'error');
+            }
+        });
+
+        // Reset demo
+        function resetDemo() {
+            currentPhoneNumber = '';
+            authToken = '';
+            document.getElementById('messages').innerHTML = '';
+            document.querySelectorAll('form').forEach(form => form.reset());
+            document.querySelectorAll('.otp-display').forEach(div => div.classList.add('hidden'));
+            showStep('step1');
+        }
+
+        // Add demo buttons
+        function addDemoButtons() {
+            const container = document.querySelector('.container');
+            const demoDiv = document.createElement('div');
+            demoDiv.innerHTML = `
+                <div style="margin: 20px 0; padding: 15px; background-color: #e9ecef; border-radius: 5px;">
+                    <h4>Quick Demo Actions:</h4>
+                    <button onclick="fillDemoData()">Fill Demo Data</button>
+                    <button onclick="showStep('step3')">Skip to Login</button>
+                    <button onclick="resetDemo()">Reset Demo</button>
+                </div>
+            `;
+            container.appendChild(demoDiv);
+        }
+
+        function fillDemoData() {
+            document.getElementById('firstName').value = 'John';
+            document.getElementById('lastName').value = 'Doe';
+            document.getElementById('phoneNumber').value = '+1234567890';
+            document.getElementById('gender').value = 'male';
+            document.getElementById('dateOfBirth').value = '1990-05-15';
+            document.getElementById('loginPhone').value = '+1234567890';
+        }
+
+        // Initialize
+        addDemoButtons();
+        showMessage('📱 Phone Authentication Demo Ready! Make sure the server is running on port 3000.', 'info');
+    </script>
+</body>
+</html>
