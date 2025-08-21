@@ -41,13 +41,7 @@ const userSchemas = {
 
   verifyOtp: Joi.object({
     phoneNumber: Joi.string().pattern(patterns.phone).required(),
-    otp: Joi.string().pattern(patterns.otp).required(),
-    password: Joi.string().min(6).when('isRegistration', {
-      is: true,
-      then: Joi.required(),
-      otherwise: Joi.optional()
-    }),
-    isRegistration: Joi.boolean().default(false)
+    otp: Joi.string().pattern(patterns.otp).required()
   }),
 
   resendOtp: Joi.object({

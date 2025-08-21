@@ -438,14 +438,6 @@ const login = async (req, res, next) => {
  *               otp:
  *                 type: string
  *                 example: "123456"
- *               password:
- *                 type: string
- *                 example: "SecurePass123!"
- *                 description: "Required for new registrations"
- *               isRegistration:
- *                 type: boolean
- *                 example: false
- *                 description: "Set to true if this is completing a registration"
  *     responses:
  *       200:
  *         description: OTP verified successfully
