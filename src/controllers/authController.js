@@ -2,10 +2,120 @@ const User = require('../models/User');
 const { generateToken } = require('../middleware/auth');
 const { AppError } = require('../middleware/errorHandler');
 const database = require('../config/database');
+const Joi = require('joi');
+const logger = require('../config/logger');
 
+/**
+ * @swagger
+ * /auth/send-otp:
+ *   post:
+ *     summary: Send OTP to phone number
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phoneNumber
+ *             properties:
+ *               phoneNumber:
+ *                 type: string
+ *                 pattern: '^\+?[1-9]\d{1,14}$'
+ *                 description: Phone number in international format
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         phoneNumber:
+ *                           type: string
+ *                         otpExpires:
+ *                           type: string
+ *                           format: date-time
+ *                         verificationId:
+ *                           type: string
+ *       400:
+ *         description: Invalid phone number or user already exists
+ *       500:
+ *         description: Internal server error
+ */
+const sendOtp = async (req, res, next) => {
+  try {
+    const { error } = Joi.object({
+      phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required()
+    }).validate(req.body);
+    
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
 
+    const { phoneNumber } = req.body;
 
+    // Check if user already exists
+    const existingUser = await User.findByPhoneNumber(phoneNumber);
+    if (existingUser) {
+      throw new AppError('User with this phone number already exists', 409, 'USER_EXISTS');
+    }
 
+    // Generate OTP
+    const otp = '123456'; // Static OTP for development
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+    const verificationId = require('uuid').v4();
+
+    // Store phone verification in database
+    const cypher = `
+      MERGE (pv:PhoneVerification {phoneNumber: $phoneNumber})
+      SET pv.otp = $otp,
+          pv.otpExpires = $otpExpires,
+          pv.otpAttempts = 0,
+          pv.verificationId = $verificationId,
+          pv.isVerified = false,
+          pv.createdAt = $createdAt,
+          pv.updatedAt = $updatedAt
+      RETURN pv
+    `;
+
+    const result = await database.runQuery(cypher, {
+      phoneNumber,
+      otp,
+      otpExpires,
+      verificationId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    if (result.records.length === 0) {
+      throw new AppError('Failed to send OTP', 500, 'OTP_SEND_FAILED');
+    }
+
+    // TODO: Send OTP via SMS service
+    logger.info(`OTP for ${phoneNumber}: ${otp}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent to your phone number',
+      data: {
+        phoneNumber,
+        otpExpires,
+        verificationId,
+        // Remove this in production
+        otp: process.env.NODE_ENV === 'development' ? otp : undefined
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * @swagger
@@ -251,6 +361,19 @@ const updateProfile = async (req, res, next) => {
  */
 const register = async (req, res, next) => {
   try {
+    const { error } = Joi.object({
+      firstName: Joi.string().min(2).max(50).required(),
+      middleName: Joi.string().min(1).max(50).optional(),
+      lastName: Joi.string().min(2).max(50).required(),
+      phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required(),
+      gender: Joi.string().valid('male', 'female', 'other').required(),
+      dateOfBirth: Joi.date().optional()
+    }).validate(req.body);
+    
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
+
     const { firstName, middleName, lastName, phoneNumber, gender, dateOfBirth } = req.body;
 
     // Check if user already exists
@@ -259,14 +382,26 @@ const register = async (req, res, next) => {
       throw new AppError('User with this phone number already exists', 409, 'USER_EXISTS');
     }
 
-    // Generate OTP and expiry
-    const otp = '123456'; // Static OTP for development
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
-    const userId = require('uuid').v4();
+    // Check if phone is verified
+    const verificationResult = await database.runQuery(`
+      MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+      RETURN pv
+    `, { phoneNumber });
 
-    // Create user directly in database with minimal fields
-    const cypher = `
-      CREATE (u:User:Person {
+    if (verificationResult.records.length === 0) {
+      throw new AppError('Phone number not found. Please verify your phone number first.', 400, 'PHONE_NOT_VERIFIED');
+    }
+
+    const verificationData = database.constructor.extractNodeProperties(verificationResult.records[0], 'pv');
+    
+    if (!verificationData.isVerified) {
+      throw new AppError('Phone number not verified. Please verify your phone number first.', 400, 'PHONE_NOT_VERIFIED');
+    }
+
+    // Create user after phone verification
+    const userId = require('uuid').v4();
+    const userCypher = `
+      CREATE (u:User {
         id: $id,
         firstName: $firstName,
         middleName: $middleName,
@@ -274,20 +409,22 @@ const register = async (req, res, next) => {
         phone: $phoneNumber,
         gender: $gender,
         dateOfBirth: $dateOfBirth,
-        isPhoneVerified: false,
-        phoneOtp: $otp,
-        phoneOtpExpires: $otpExpires,
+        isPhoneVerified: true,
+        phoneOtp: null,
+        phoneOtpExpires: null,
         phoneOtpAttempts: 0,
         role: 'member',
         isActive: true,
         isEmailVerified: false,
+        isOnline: true,
+        hasCompletedProfile: false,
         createdAt: $createdAt,
         updatedAt: $updatedAt
       })
       RETURN u
     `;
 
-    const result = await database.runQuery(cypher, {
+    const userResult = await database.runQuery(userCypher, {
       id: userId,
       firstName,
       middleName: middleName || null,
@@ -295,27 +432,43 @@ const register = async (req, res, next) => {
       phoneNumber,
       gender,
       dateOfBirth: dateOfBirth || null,
-      otp,
-      otpExpires,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
 
-    if (result.records.length === 0) {
+    if (userResult.records.length === 0) {
       throw new AppError('Failed to create user', 500, 'USER_CREATION_FAILED');
     }
 
-    // In production, you would send the OTP via SMS service
-    console.log(`OTP for ${phoneNumber}: ${otp}`);
+    // Clean up phone verification record
+    await database.runQuery(`
+      MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+      DELETE pv
+    `, { phoneNumber });
+
+    const newUser = database.constructor.extractNodeProperties(userResult.records[0], 'u');
+    const token = generateToken(newUser.id);
 
     res.status(201).json({
       success: true,
-      message: 'OTP sent to your phone number',
+      message: 'Registration successful! You can now complete your profile.',
       data: {
-        phoneNumber,
-        otpExpires,
-        // For development only - remove in production
-        otp: process.env.NODE_ENV === 'development' ? otp : undefined
+        user: {
+          id: newUser.id,
+          firstName: newUser.firstName,
+          middleName: newUser.middleName,
+          lastName: newUser.lastName,
+          phone: newUser.phone,
+          phoneNumber: newUser.phone,
+          gender: newUser.gender,
+          dateOfBirth: newUser.dateOfBirth,
+          isPhoneVerified: newUser.isPhoneVerified,
+          hasCompletedProfile: newUser.hasCompletedProfile,
+          role: newUser.role,
+          isActive: newUser.isActive
+        },
+        token,
+        requiresProfileCompletion: !newUser.hasCompletedProfile
       }
     });
   } catch (error) {
@@ -467,21 +620,100 @@ const login = async (req, res, next) => {
  */
 const verifyOtp = async (req, res, next) => {
   try {
-    const { phoneNumber, otp, password, isRegistration } = req.body;
+    const { error } = Joi.object({
+      phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required(),
+      otp: Joi.string().length(6).required()
+    }).validate(req.body);
+    
+    if (error) {
+      throw new AppError(error.details[0].message, 400, 'VALIDATION_ERROR');
+    }
 
-    // Find user by phone number
-    const findResult = await database.runQuery(`
+    const { phoneNumber, otp } = req.body;
+
+    // First, check if this is for registration (PhoneVerification node)
+    const verificationResult = await database.runQuery(`
+      MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+      RETURN pv
+    `, { phoneNumber });
+
+    if (verificationResult.records.length > 0) {
+      // Handle registration OTP verification
+      const verificationData = database.constructor.extractNodeProperties(verificationResult.records[0], 'pv');
+      
+      // Check if OTP is valid
+      const currentTime = new Date();
+      const otpExpiryTime = new Date(verificationData.otpExpires);
+      const isOtpValid = verificationData.otp === otp && currentTime < otpExpiryTime;
+
+      if (!isOtpValid) {
+        const newAttempts = (verificationData.otpAttempts || 0) + 1;
+        
+        if (newAttempts >= 3) {
+          // Delete verification after too many attempts
+          await database.runQuery(`
+            MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+            DELETE pv
+          `, { phoneNumber });
+          throw new AppError('Too many invalid attempts. Please request a new OTP.', 400, 'TOO_MANY_ATTEMPTS');
+        }
+        
+        // Update attempt count
+        await database.runQuery(`
+          MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+          SET pv.otpAttempts = $attempts,
+              pv.updatedAt = $updatedAt
+        `, {
+          phoneNumber,
+          attempts: newAttempts,
+          updatedAt: new Date().toISOString()
+        });
+        
+        throw new AppError('Invalid or expired OTP', 400, 'INVALID_OTP');
+      }
+
+      // Mark phone as verified for registration
+      await database.runQuery(`
+        MATCH (pv:PhoneVerification {phoneNumber: $phoneNumber})
+        SET pv.isVerified = true,
+            pv.verifiedAt = $verifiedAt,
+            pv.updatedAt = $updatedAt
+      `, {
+        phoneNumber,
+        verifiedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        message: 'Phone number verified successfully. You can now register.',
+        data: {
+          phoneNumber,
+          isVerified: true,
+          verifiedAt: new Date().toISOString()
+        }
+      });
+      return;
+    }
+
+    // If no PhoneVerification found, check if this is for login (User OTP)
+    const userResult = await database.runQuery(`
       MATCH (u:User {phone: $phoneNumber})
       RETURN u
     `, { phoneNumber });
 
-    if (findResult.records.length === 0) {
-      throw new AppError('User with this phone number not found', 404, 'USER_NOT_FOUND');
+    if (userResult.records.length === 0) {
+      throw new AppError('Phone number not found. Please send OTP first.', 404, 'PHONE_NOT_FOUND');
     }
 
-    const userData = database.constructor.extractNodeProperties(findResult.records[0], 'u');
+    const userData = database.constructor.extractNodeProperties(userResult.records[0], 'u');
     
-    // Check if OTP is valid
+    // Check if user has OTP set
+    if (!userData.phoneOtp || !userData.phoneOtpExpires) {
+      throw new AppError('No OTP found for this phone number. Please request a new OTP.', 400, 'NO_OTP_FOUND');
+    }
+
+    // Check if OTP is valid for login
     const currentTime = new Date();
     const otpExpiryTime = new Date(userData.phoneOtpExpires);
     const isOtpValid = userData.phoneOtp === otp && currentTime < otpExpiryTime;
@@ -497,7 +729,6 @@ const verifyOtp = async (req, res, next) => {
               u.phoneOtpExpires = null,
               u.phoneOtpAttempts = 0,
               u.updatedAt = $updatedAt
-          RETURN u
         `, {
           phoneNumber,
           updatedAt: new Date().toISOString()
@@ -510,7 +741,6 @@ const verifyOtp = async (req, res, next) => {
         MATCH (u:User {phone: $phoneNumber})
         SET u.phoneOtpAttempts = $attempts,
             u.updatedAt = $updatedAt
-        RETURN u
       `, {
         phoneNumber,
         attempts: newAttempts,
@@ -520,56 +750,48 @@ const verifyOtp = async (req, res, next) => {
       throw new AppError('Invalid or expired OTP', 400, 'INVALID_OTP');
     }
 
-    // Prepare update query
-    let updateQuery = `
+    // Update user after successful login
+    const updateResult = await database.runQuery(`
       MATCH (u:User {phone: $phoneNumber})
-      SET u.isPhoneVerified = true,
-          u.phoneOtp = null,
+      SET u.phoneOtp = null,
           u.phoneOtpExpires = null,
           u.phoneOtpAttempts = 0,
           u.isOnline = true,
+          u.lastLoginAt = $lastLoginAt,
+          u.loginCount = COALESCE(u.loginCount, 0) + 1,
           u.updatedAt = $updatedAt
-    `;
-    
-    const updateParams = {
+      RETURN u
+    `, {
       phoneNumber,
+      lastLoginAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    };
+    });
 
-    // If this is a registration, set the password
-    if (isRegistration && password) {
-      const hashedPassword = await require('bcryptjs').hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
-      updateQuery += `, u.password = $password`;
-      updateParams.password = hashedPassword;
-    }
-
-    updateQuery += ` RETURN u`;
-
-    // Update user
-    const updateResult = await database.runQuery(updateQuery, updateParams);
     const updatedUser = database.constructor.extractNodeProperties(updateResult.records[0], 'u');
-
-    // Generate token
     const token = generateToken(userData.id);
 
     res.json({
       success: true,
-      message: isRegistration ? 'Registration completed successfully' : 'Login successful',
+      message: 'Login successful',
       data: {
         user: {
           id: updatedUser.id,
           firstName: updatedUser.firstName,
+          middleName: updatedUser.middleName,
           lastName: updatedUser.lastName,
           phone: updatedUser.phone,
-          phoneNumber: updatedUser.phone, // For API compatibility
+          phoneNumber: updatedUser.phone,
           gender: updatedUser.gender,
+          dateOfBirth: updatedUser.dateOfBirth,
           isPhoneVerified: updatedUser.isPhoneVerified,
+          hasCompletedProfile: updatedUser.hasCompletedProfile,
           role: updatedUser.role,
           isActive: updatedUser.isActive
         },
         token
       }
     });
+
   } catch (error) {
     next(error);
   }
@@ -667,12 +889,232 @@ const resendOtp = async (req, res, next) => {
   }
 };
 
+/**
+ * @swagger
+ * /auth/complete-profile:
+ *   post:
+ *     summary: Complete user profile with additional details
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "1990-05-15"
+ *               location:
+ *                 type: string
+ *                 example: "New York, USA"
+ *               occupation:
+ *                 type: string
+ *                 example: "Software Engineer"
+ *               employer:
+ *                 type: string
+ *                 example: "Tech Corp"
+ *               biography:
+ *                 type: string
+ *                 example: "A brief biography about myself"
+ *               address:
+ *                 type: object
+ *                 properties:
+ *                   street:
+ *                     type: string
+ *                     example: "123 Main St"
+ *                   city:
+ *                     type: string
+ *                     example: "New York"
+ *                   state:
+ *                     type: string
+ *                     example: "NY"
+ *                   country:
+ *                     type: string
+ *                     example: "USA"
+ *                   postalCode:
+ *                     type: string
+ *                     example: "10001"
+ *               preferences:
+ *                 type: object
+ *                 properties:
+ *                   language:
+ *                     type: string
+ *                     example: "en"
+ *                   timezone:
+ *                     type: string
+ *                     example: "America/New_York"
+ *                   notifications:
+ *                     type: object
+ *                     properties:
+ *                       email:
+ *                         type: boolean
+ *                         example: true
+ *                       push:
+ *                         type: boolean
+ *                         example: true
+ *                       sms:
+ *                         type: boolean
+ *                         example: false
+ *     responses:
+ *       200:
+ *         description: Profile completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+const completeProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const {
+      dateOfBirth,
+      location,
+      occupation,
+      employer,
+      biography,
+      address,
+      preferences
+    } = req.body;
+
+    // Build update query dynamically based on provided fields
+    const updateFields = [];
+    const updateParams = { userId, updatedAt: new Date().toISOString() };
+
+    if (dateOfBirth !== undefined) {
+      updateFields.push('u.dateOfBirth = $dateOfBirth');
+      updateParams.dateOfBirth = dateOfBirth;
+    }
+
+    if (location !== undefined) {
+      updateFields.push('u.location = $location');
+      updateParams.location = location;
+    }
+
+    if (occupation !== undefined) {
+      updateFields.push('u.occupation = $occupation');
+      updateParams.occupation = occupation;
+    }
+
+    if (employer !== undefined) {
+      updateFields.push('u.employer = $employer');
+      updateParams.employer = employer;
+    }
+
+    if (biography !== undefined) {
+      updateFields.push('u.biography = $biography');
+      updateParams.biography = biography;
+    }
+
+    if (address !== undefined) {
+      updateFields.push('u.address = $address');
+      updateParams.address = address;
+    }
+
+    if (preferences !== undefined) {
+      updateFields.push('u.preferences = $preferences');
+      updateParams.preferences = preferences;
+    }
+
+    // Always mark profile as completed
+    updateFields.push('u.hasCompletedProfile = true');
+
+    if (updateFields.length === 1) { // Only hasCompletedProfile was added
+      throw new AppError('At least one profile field must be provided', 400, 'NO_FIELDS_PROVIDED');
+    }
+
+    const updateQuery = `
+      MATCH (u:User {id: $userId})
+      SET ${updateFields.join(', ')},
+          u.updatedAt = $updatedAt
+      RETURN u
+    `;
+
+    const result = await database.runQuery(updateQuery, updateParams);
+
+    if (result.records.length === 0) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    const updatedUser = database.constructor.extractNodeProperties(result.records[0], 'u');
+
+    res.json({
+      success: true,
+      message: 'Profile completed successfully',
+      data: {
+        user: {
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          middleName: updatedUser.middleName,
+          lastName: updatedUser.lastName,
+          phone: updatedUser.phone,
+          phoneNumber: updatedUser.phone,
+          gender: updatedUser.gender,
+          dateOfBirth: updatedUser.dateOfBirth,
+          location: updatedUser.location,
+          occupation: updatedUser.occupation,
+          employer: updatedUser.employer,
+          biography: updatedUser.biography,
+          address: updatedUser.address,
+          preferences: updatedUser.preferences,
+          isPhoneVerified: updatedUser.isPhoneVerified,
+          hasCompletedProfile: updatedUser.hasCompletedProfile,
+          role: updatedUser.role,
+          isActive: updatedUser.isActive
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Clean up expired pending registrations
+ * This should be called periodically (e.g., via a cron job)
+ */
+const cleanupExpiredRegistrations = async () => {
+  try {
+    const result = await database.runQuery(`
+      MATCH (r:PendingRegistration)
+      WHERE r.expiresAt < $currentTime
+      DELETE r
+      RETURN count(r) as deletedCount
+    `, {
+      currentTime: new Date().toISOString()
+    });
+
+    const deletedCount = result.records[0]?.get('deletedCount')?.toNumber() || 0;
+    console.log(`Cleaned up ${deletedCount} expired pending registrations`);
+    return deletedCount;
+  } catch (error) {
+    console.error('Error cleaning up expired registrations:', error);
+    throw error;
+  }
+};
+
 module.exports = {
+  sendOtp,
+  verifyOtp,
   register,
+  completeProfile,
   login,
   logout,
   getProfile,
   updateProfile,
-  verifyOtp,
-  resendOtp
+  resendOtp,
+  cleanupExpiredRegistrations
 };

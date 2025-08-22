@@ -2,12 +2,32 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const database = require('../config/database');
 const { AppError } = require('../middleware/errorHandler');
-const Person = require('./Person');
 
-class User extends Person {
+class User {
   constructor(data) {
-    // Call parent constructor with person data
-    super(data);
+    // Identity
+    this.id = data.id || uuidv4();
+    
+    // Personal Information
+    this.firstName = data.firstName;
+    this.middleName = data.middleName || null;
+    this.lastName = data.lastName;
+    
+    // Demographics
+    this.gender = data.gender;
+    this.dateOfBirth = data.dateOfBirth || null;
+    
+    // Contact & Location
+    this.email = data.email || null;
+    this.phone = data.phone || data.phoneNumber || null;
+    this.address = data.address || {};
+    this.location = data.location || null;
+    
+    // Profile
+    this.profilePicture = data.profilePicture || null;
+    this.biography = data.biography || null;
+    this.occupation = data.occupation || null;
+    this.employer = data.employer || null;
     
     // User-specific properties
     // Authentication
@@ -15,9 +35,9 @@ class User extends Person {
     this.passwordResetToken = data.passwordResetToken || null;
     this.passwordResetExpires = data.passwordResetExpires || null;
     
-    // Phone Authentication - use inherited phone field from Person
+    // Phone Authentication
     if (data.phoneNumber) {
-      this.phone = data.phoneNumber; // Map phoneNumber to inherited phone field
+      this.phone = data.phoneNumber; // Map phoneNumber to phone field
     }
     this.isPhoneVerified = data.isPhoneVerified || false;
     this.phoneOtp = data.phoneOtp || null;
@@ -32,6 +52,13 @@ class User extends Person {
     this.isActive = data.isActive !== undefined ? data.isActive : true;
     this.isEmailVerified = data.isEmailVerified || false;
     this.emailVerificationToken = data.emailVerificationToken || null;
+    
+    // Profile completion
+    this.hasCompletedProfile = data.hasCompletedProfile || false;
+    
+    // Online status
+    this.isOnline = data.isOnline || false;
+    this.lastSeen = data.lastSeen || null;
     
     // Preferences
     this.preferences = data.preferences || {
@@ -58,6 +85,14 @@ class User extends Person {
     // Family Tree Management
     this.ownedTrees = data.ownedTrees || [];
     this.memberOfTrees = data.memberOfTrees || [];
+    
+    // Subscription
+    this.subscriptionType = data.subscriptionType || 'free';
+    this.subscriptionExpires = data.subscriptionExpires || null;
+    
+    // Timestamps
+    this.createdAt = data.createdAt || new Date().toISOString();
+    this.updatedAt = data.updatedAt || new Date().toISOString();
     
     // Subscription/Premium
     this.subscriptionType = data.subscriptionType || 'free';
@@ -120,7 +155,7 @@ class User extends Person {
 
   // Get full name
   getFullName() {
-    return this.middleName 
+    return this.middleName
       ? `${this.firstName} ${this.middleName} ${this.lastName}`
       : `${this.firstName} ${this.lastName}`;
   }
@@ -135,15 +170,31 @@ class User extends Person {
     this.phone = value;
   }
 
-  // Convert to JSON (exclude password)
+  // Convert to JSON (exclude sensitive fields)
   toJSON() {
-    const { password, ...userWithoutPassword } = this;
-    return userWithoutPassword;
+    const userObject = { ...this };
+    // Remove sensitive fields from JSON output
+    delete userObject.password;
+    delete userObject.passwordResetToken;
+    delete userObject.sessionTokens;
+    delete userObject.phoneOtp;
+    return userObject;
   }
 
-  // Override parent validation to include user-specific rules
+  // Validation
   validate() {
-    const errors = super.validate(); // Call parent validation
+    const errors = [];
+
+    // Required fields
+    if (!this.firstName) {
+      errors.push('First name is required');
+    }
+    if (!this.lastName) {
+      errors.push('Last name is required');
+    }
+    if (!this.gender) {
+      errors.push('Gender is required');
+    }
 
     // User-specific validation - either email or phone number is required
     if (!this.email && !this.phone) {
@@ -158,7 +209,7 @@ class User extends Person {
       errors.push('Valid phone number format is required');
     }
 
-    // Password is optional for phone-only registration (will be set during OTP verification)
+    // Password is optional for phone-only registration
     if (this.password && this.password.length < 6) {
       errors.push('Password must be at least 6 characters long');
     }
@@ -176,32 +227,18 @@ class User extends Person {
     return errors;
   }
 
-  // Phone number validation helper
+  // Helper methods for validation
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   isValidPhoneNumber(phone) {
-    const phoneRegex = /^\+?[\d\s\-\(\)]{10,15}$/;
+    const phoneRegex = /^\+?[\d\s\-()]{10,15}$/;
     return phoneRegex.test(phone);
   }
 
-  // Override toJSON to exclude sensitive data
-  toJSON() {
-    const json = super.toJSON();
-    // Remove sensitive fields from JSON output
-    delete json.password;
-    delete json.passwordResetToken;
-    delete json.sessionTokens;
-    delete json.phoneOtp;
-    delete json.phoneOtpExpires;
-    delete json.phoneOtpAttempts;
-    
-    // Add phoneNumber for API compatibility (maps to phone field)
-    if (json.phone) {
-      json.phoneNumber = json.phone;
-    }
-    
-    return json;
-  }
-
-  // Save user to Neo4j with both User and Person labels
+  // Save user to Neo4j
   async save() {
     const errors = this.validate();
     if (errors.length > 0) {
@@ -279,7 +316,7 @@ class User extends Person {
       // Create new user - set properties individually to avoid Map{} issues
       const setParts = Object.keys(properties).map(key => `u.${key} = $${key}`).join(', ');
       cypher = `
-        CREATE (u:User:Person {id: $id})
+        CREATE (u:User {id: $id})
         SET ${setParts}
         RETURN u
       `;

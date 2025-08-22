@@ -41,8 +41,39 @@ const userSchemas = {
 
   verifyOtp: Joi.object({
     phoneNumber: Joi.string().pattern(patterns.phone).required(),
-    otp: Joi.string().pattern(patterns.otp).required()
+    otp: Joi.string().pattern(patterns.otp).required(),
+    isRegistration: Joi.boolean().default(false)
   }),
+
+  completeProfile: Joi.object({
+    dateOfBirth: Joi.date().iso().max('now').allow(null),
+    location: Joi.string().max(200).allow(null, ''),
+    occupation: Joi.string().max(100).allow(null, ''),
+    employer: Joi.string().max(100).allow(null, ''),
+    biography: Joi.string().max(1000).allow(null, ''),
+    address: Joi.object({
+      street: Joi.string().max(200).allow(null, ''),
+      city: Joi.string().max(100).allow(null, ''),
+      state: Joi.string().max(100).allow(null, ''),
+      country: Joi.string().max(100).allow(null, ''),
+      postalCode: Joi.string().max(20).allow(null, '')
+    }).allow(null),
+    preferences: Joi.object({
+      language: Joi.string().default('en'),
+      timezone: Joi.string().default('UTC'),
+      dateFormat: Joi.string().default('YYYY-MM-DD'),
+      notifications: Joi.object({
+        email: Joi.boolean().default(true),
+        push: Joi.boolean().default(true),
+        sms: Joi.boolean().default(false)
+      }).default(),
+      privacy: Joi.object({
+        showEmail: Joi.boolean().default(false),
+        showPhone: Joi.boolean().default(false),
+        showBirthDate: Joi.boolean().default(true)
+      }).default()
+    }).allow(null)
+  }).min(1),
 
   resendOtp: Joi.object({
     phoneNumber: Joi.string().pattern(patterns.phone).required()

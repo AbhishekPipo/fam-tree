@@ -10,23 +10,25 @@ async function setupDatabase() {
     // Create constraints and indexes
     const constraints = [
       // Unique constraints
-      'CREATE CONSTRAINT person_id_unique IF NOT EXISTS FOR (p:Person) REQUIRE p.id IS UNIQUE',
+      'CREATE CONSTRAINT user_id_unique IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE',
       'CREATE CONSTRAINT user_email_unique IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE',
+      'CREATE CONSTRAINT user_phone_unique IF NOT EXISTS FOR (u:User) REQUIRE u.phone IS UNIQUE',
       'CREATE CONSTRAINT tree_id_unique IF NOT EXISTS FOR (t:FamilyTree) REQUIRE t.id IS UNIQUE',
       'CREATE CONSTRAINT event_id_unique IF NOT EXISTS FOR (e:Event) REQUIRE e.id IS UNIQUE',
       'CREATE CONSTRAINT media_id_unique IF NOT EXISTS FOR (m:Media) REQUIRE m.id IS UNIQUE',
 
       // Existence constraints
-      'CREATE CONSTRAINT person_name_exists IF NOT EXISTS FOR (p:Person) REQUIRE p.firstName IS NOT NULL',
-      'CREATE CONSTRAINT person_gender_exists IF NOT EXISTS FOR (p:Person) REQUIRE p.gender IS NOT NULL'
+      'CREATE CONSTRAINT user_name_exists IF NOT EXISTS FOR (u:User) REQUIRE u.firstName IS NOT NULL',
+      'CREATE CONSTRAINT user_gender_exists IF NOT EXISTS FOR (u:User) REQUIRE u.gender IS NOT NULL'
     ];
 
     const indexes = [
       // Performance indexes
-      'CREATE INDEX person_name_index IF NOT EXISTS FOR (p:Person) ON (p.firstName, p.lastName)',
-      'CREATE INDEX person_birth_index IF NOT EXISTS FOR (p:Person) ON (p.dateOfBirth)',
-      'CREATE INDEX person_gender_index IF NOT EXISTS FOR (p:Person) ON (p.gender)',
+      'CREATE INDEX user_name_index IF NOT EXISTS FOR (u:User) ON (u.firstName, u.lastName)',
+      'CREATE INDEX user_birth_index IF NOT EXISTS FOR (u:User) ON (u.dateOfBirth)',
+      'CREATE INDEX user_gender_index IF NOT EXISTS FOR (u:User) ON (u.gender)',
       'CREATE INDEX user_email_index IF NOT EXISTS FOR (u:User) ON (u.email)',
+      'CREATE INDEX user_phone_index IF NOT EXISTS FOR (u:User) ON (u.phone)',
       'CREATE INDEX user_role_index IF NOT EXISTS FOR (u:User) ON (u.role)',
       'CREATE INDEX event_date_index IF NOT EXISTS FOR (e:Event) ON (e.date)',
       'CREATE INDEX event_type_index IF NOT EXISTS FOR (e:Event) ON (e.eventType)',
@@ -38,7 +40,7 @@ async function setupDatabase() {
 
     const fullTextIndexes = [
       // Full-text search indexes
-      'CREATE FULLTEXT INDEX person_search_index IF NOT EXISTS FOR (p:Person) ON EACH [p.firstName, p.lastName, p.biography, p.notes]',
+      'CREATE FULLTEXT INDEX user_search_index IF NOT EXISTS FOR (u:User) ON EACH [u.firstName, u.lastName, u.biography, u.occupation]',
       'CREATE FULLTEXT INDEX event_search_index IF NOT EXISTS FOR (e:Event) ON EACH [e.title, e.description]'
     ];
 
