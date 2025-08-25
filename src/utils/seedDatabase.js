@@ -20,6 +20,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'harilal.patel@family.com',
+        phoneNumber: '+919876543210',
         password: hashedPassword,
         dateOfBirth: '1925-03-15',
         gender: 'male',
@@ -44,6 +45,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'savitri.patel@family.com',
+        phoneNumber: '+919876543211',
         password: hashedPassword,
         dateOfBirth: '1930-07-20',
         gender: 'female',
@@ -68,6 +70,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'ramesh.patel@family.com',
+        phoneNumber: '+919876543212',
         password: hashedPassword,
         dateOfBirth: '1955-01-10',
         gender: 'male',
@@ -92,6 +95,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'mallika.patel@family.com',
+        phoneNumber: '+919876543213',
         password: hashedPassword,
         dateOfBirth: '1958-06-20',
         gender: 'female',
@@ -116,6 +120,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'suresh.patel@family.com',
+        phoneNumber: '+919876543214',
         password: hashedPassword,
         dateOfBirth: '1952-09-05',
         gender: 'male',
@@ -140,6 +145,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'kiran.patel@family.com',
+        phoneNumber: '+919876543215',
         password: hashedPassword,
         dateOfBirth: '1955-12-18',
         gender: 'female',
@@ -164,6 +170,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'prashanth@family.com',
+        phoneNumber: '+919876543216',
         password: hashedPassword,
         dateOfBirth: '1980-05-15',
         gender: 'male',
@@ -188,6 +195,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'anjali@family.com',
+        phoneNumber: '+919876543217',
         password: hashedPassword,
         dateOfBirth: '1982-08-22',
         gender: 'female',
@@ -212,6 +220,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'amit@family.com',
+        phoneNumber: '+919876543218',
         password: hashedPassword,
         dateOfBirth: '1983-11-25',
         gender: 'male',
@@ -236,6 +245,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'priya.patel@family.com',
+        phoneNumber: '+919876543219',
         password: hashedPassword,
         dateOfBirth: '1986-02-14',
         gender: 'female',
@@ -260,6 +270,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Shah',
         email: 'vikram.shah@family.com',
+        phoneNumber: '+919876543220',
         password: hashedPassword,
         dateOfBirth: '1984-07-30',
         gender: 'male',
@@ -284,6 +295,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'arjun@family.com',
+        phoneNumber: '+919876543221',
         password: hashedPassword,
         dateOfBirth: '2005-03-10',
         gender: 'male',
@@ -308,6 +320,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Patel',
         email: 'simran@family.com',
+        phoneNumber: '+919876543222',
         password: hashedPassword,
         dateOfBirth: '2008-07-18',
         gender: 'female',
@@ -332,6 +345,7 @@ async function seedDatabase() {
         middleName: null,
         lastName: 'Sharma',
         email: 'meera.sharma@family.com',
+        phoneNumber: '+919876543223',
         password: hashedPassword,
         dateOfBirth: '1985-04-12',
         gender: 'female',
@@ -354,14 +368,9 @@ async function seedDatabase() {
 
     console.log('👥 Creating users...');
     
-    // Create all users
+    // Create all users using the User model
     for (const userData of users) {
-      const cypher = `
-        CREATE (u:User $properties)
-        RETURN u
-      `;
-      
-      await database.runQuery(cypher, { properties: userData });
+      await User.create(userData);
       console.log(`✅ Created user: ${userData.firstName} ${userData.lastName}`);
     }
 
