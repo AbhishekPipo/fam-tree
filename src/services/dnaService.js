@@ -4,13 +4,13 @@ const { AppError } = require('../middleware/errorHandler');
 const { v4: uuidv4 } = require('uuid');
 
 class DNAService {
-  /**
-   * Add DNA data for a person
-   * @param {string} personId - Person ID
-   * @param {Object} dnaData - DNA data
-   * @returns {Object} Created DNA record
+    /**
+   * Add DNA data for a user
+   * @param {string} userId - User ID
+   * @param {Object} dnaData - DNA data object
+   * @returns {Promise<Object>} Result object
    */
-  static async addDNAData(personId, dnaData) {
+  static async addDNAData(userId, dnaData) {
     const {
       testingCompany,
       testDate,
@@ -24,7 +24,7 @@ class DNAService {
     const dnaId = uuidv4();
     
     const cypher = `
-      MATCH (p:Person {id: $personId})
+      MATCH (u:User {id: $userId})
       CREATE (dna:DNA {
         id: $dnaId,
         testingCompany: $testingCompany,
@@ -37,12 +37,12 @@ class DNAService {
         createdAt: $createdAt,
         updatedAt: $updatedAt
       })
-      CREATE (p)-[:HAS_DNA]->(dna)
+      CREATE (u)-[:HAS_DNA]->(dna)
       RETURN dna
     `;
 
     const result = await database.runQuery(cypher, {
-      personId,
+      userId,
       dnaId,
       testingCompany,
       testDate,
@@ -63,36 +63,36 @@ class DNAService {
   }
 
   /**
-   * Find DNA matches between persons
-   * @param {string} personId - Person ID to find matches for
+   * Find DNA matches between users
+   * @param {string} userId - User ID to find matches for
    * @param {number} minSharedCM - Minimum shared centimorgans
    * @returns {Array} DNA matches
    */
-  static async findDNAMatches(personId, minSharedCM = 7) {
+  static async findDNAMatches(userId, minSharedCM = 7) {
     const cypher = `
-      MATCH (p1:Person {id: $personId})-[:HAS_DNA]->(dna1:DNA)
-      MATCH (p2:Person)-[:HAS_DNA]->(dna2:DNA)
-      WHERE p1.id <> p2.id
-      OPTIONAL MATCH (p1)-[rel]-(p2)
-      WITH p1, p2, dna1, dna2, rel,
+      MATCH (u1:User {id: $userId})-[:HAS_DNA]->(dna1:DNA)
+      MATCH (u2:User)-[:HAS_DNA]->(dna2:DNA)
+      WHERE u1.id <> u2.id
+      OPTIONAL MATCH (u1)-[rel]-(u2)
+      WITH u1, u2, dna1, dna2, rel,
            CASE 
              WHEN rel IS NOT NULL THEN 'known_relative'
              ELSE 'potential_match'
            END as matchType
-      RETURN p2 as matchPerson, 
+      RETURN u2 as matchUser, 
              dna2 as matchDNA,
              matchType,
              CASE matchType
                WHEN 'known_relative' THEN type(rel)
                ELSE null
              END as knownRelationship
-      ORDER BY matchType, p2.lastName, p2.firstName
+      ORDER BY matchType, u2.lastName, u2.firstName
     `;
 
-    const result = await database.runQuery(cypher, { personId });
+    const result = await database.runQuery(cypher, { userId });
     
     return result.records.map(record => ({
-      person: database.constructor.extractNodeProperties(record, 'matchPerson'),
+      user: database.constructor.extractNodeProperties(record, 'matchUser'),
       dna: database.constructor.extractNodeProperties(record, 'matchDNA'),
       matchType: record.get('matchType'),
       knownRelationship: record.get('knownRelationship'),

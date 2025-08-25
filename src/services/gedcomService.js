@@ -3,11 +3,27 @@ const path = require('path');
 const database = require('../config/database');
 const logger = require('../config/logger');
 const { AppError } = require('../middleware/errorHandler');
-const Person = require('../models/Person');
+const User = require('../models/User');
 const FamilyTree = require('../models/FamilyTree');
 const { v4: uuidv4 } = require('uuid');
 
 class GedcomService {
+  /**
+   * Import   /**
+   * Add a user to a family tree
+   * @param {string} treeId - Family tree ID
+   * @param {string} userId - User ID
+   */
+  static async addUserToTree(treeId, userId) {
+    const cypher = `
+      MATCH (ft:FamilyTree {id: $treeId})
+      MATCH (u:User {id: $userId})
+      CREATE (ft)-[:CONTAINS]->(u)
+    `;
+
+    await database.runQuery(cypher, { treeId, userId });
+  }
+
   /**
    * Import GEDCOM file
    * @param {string} filePath - Path to GEDCOM file
@@ -48,16 +64,16 @@ class GedcomService {
       };
 
       // Import individuals
-      const personMap = new Map(); // GEDCOM ID -> Neo4j ID mapping
+      const userMap = new Map(); // GEDCOM ID -> Neo4j ID mapping
       
       for (const individual of parsedData.individuals) {
         try {
-          const personData = this.convertGedcomIndividual(individual);
-          const person = await Person.create(personData);
-          personMap.set(individual.id, person.id);
+          const userData = this.convertGedcomIndividual(individual);
+          const user = await User.create(userData);
+          userMap.set(individual.id, user.id);
           
-          // Add person to family tree
-          await this.addPersonToTree(familyTree.id, person.id);
+          // Add user to family tree
+          await this.addUserToTree(familyTree.id, user.id);
           
           importResults.personsImported++;
         } catch (error) {
@@ -72,7 +88,7 @@ class GedcomService {
       // Import families and relationships
       for (const family of parsedData.families) {
         try {
-          await this.importFamily(family, personMap);
+          await this.importFamily(family, userMap);
           importResults.relationshipsImported += this.countFamilyRelationships(family);
         } catch (error) {
           importResults.errors.push({
@@ -86,7 +102,7 @@ class GedcomService {
       // Import events
       for (const event of parsedData.events) {
         try {
-          await this.importEvent(event, personMap);
+          await this.importEvent(event, userMap);
           importResults.eventsImported++;
         } catch (error) {
           importResults.errors.push({

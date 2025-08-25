@@ -101,9 +101,9 @@ class Relationship {
     }
   };
 
-  constructor(fromPersonId, toPersonId, relationshipType, properties = {}) {
-    this.fromPersonId = fromPersonId;
-    this.toPersonId = toPersonId;
+  constructor(fromUserId, toUserId, relationshipType, properties = {}) {
+    this.fromUserId = fromUserId;
+    this.toUserId = toUserId;
     this.relationshipType = relationshipType;
     this.properties = {
       establishedDate: new Date().toISOString(),
@@ -172,8 +172,8 @@ class Relationship {
       try {
         switch (rule) {
           case 'preventSelfRelation':
-            if (this.fromPersonId === this.toPersonId) {
-              errors.push('Person cannot have relationship with themselves');
+            if (this.fromUserId === this.toUserId) {
+              errors.push('User cannot have relationship with themselves');
             }
             break;
 
@@ -185,7 +185,7 @@ class Relationship {
 
           case 'preventPolygamy':
             if (await this.hasActiveMarriage()) {
-              errors.push('Person is already married');
+              errors.push('User is already married');
             }
             break;
 
@@ -210,13 +210,13 @@ class Relationship {
   async hasCircularRelation() {
     // Check if creating this relationship would create a circular dependency
     const cypher = `
-      MATCH path = (from:Person {id: $toPersonId})-[:PARENT_OF*1..10]->(to:Person {id: $fromPersonId})
+      MATCH path = (from:User {id: $toUserId})-[:PARENT_OF*1..10]->(to:User {id: $fromUserId})
       RETURN count(path) > 0 as hasCircular
     `;
 
     const result = await database.runQuery(cypher, {
-      fromPersonId: this.fromPersonId,
-      toPersonId: this.toPersonId
+      fromUserId: this.fromUserId,
+      toUserId: this.toUserId
     });
 
     return result.records[0]?.get('hasCircular') || false;
@@ -226,13 +226,13 @@ class Relationship {
     if (this.relationshipType !== 'MARRIED_TO') return false;
 
     const cypher = `
-      MATCH (p:Person {id: $personId})-[r:MARRIED_TO]-(spouse:Person)
+      MATCH (u:User {id: $userId})-[r:MARRIED_TO]-(spouse:User)
       WHERE r.status = 'married' OR r.status IS NULL
       RETURN count(r) > 0 as hasActiveMarriage
     `;
 
-    const fromResult = await database.runQuery(cypher, { personId: this.fromPersonId });
-    const toResult = await database.runQuery(cypher, { personId: this.toPersonId });
+    const fromResult = await database.runQuery(cypher, { userId: this.fromUserId });
+    const toResult = await database.runQuery(cypher, { userId: this.toUserId });
 
     return fromResult.records[0]?.get('hasActiveMarriage') || 
            toResult.records[0]?.get('hasActiveMarriage') || false;
@@ -243,8 +243,8 @@ class Relationship {
     if (!['PARENT_OF', 'CHILD_OF'].includes(this.relationshipType)) return false;
 
     const cypher = `
-      MATCH (from:Person {id: $fromPersonId})
-      MATCH (to:Person {id: $toPersonId})
+      MATCH (from:User {id: $fromUserId})
+      MATCH (to:User {id: $toUserId})
       WHERE from.dateOfBirth IS NOT NULL AND to.dateOfBirth IS NOT NULL
       RETURN 
         duration.between(date(from.dateOfBirth), date(to.dateOfBirth)).years as ageDiff

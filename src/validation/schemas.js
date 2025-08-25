@@ -107,8 +107,8 @@ const userSchemas = {
   }).min(1)
 };
 
-// Person validation schemas
-const personSchemas = {
+// Family member validation schemas (based on User model)
+const familyMemberSchemas = {
   create: Joi.object({
     firstName: Joi.string().trim().min(1).max(50).required(),
     middleName: Joi.string().trim().max(50).allow(null, ''),
@@ -251,8 +251,8 @@ const eventSchemas = {
 // Relationship validation schemas
 const relationshipSchemas = {
   create: Joi.object({
-    fromPersonId: Joi.string().pattern(patterns.uuid).required(),
-    toPersonId: Joi.string().pattern(patterns.uuid).required(),
+    fromUserId: Joi.string().pattern(patterns.uuid).required(),
+    toUserId: Joi.string().pattern(patterns.uuid).required(),
     relationshipType: Joi.string().valid(
       'PARENT_OF', 'CHILD_OF', 'SIBLING_OF', 'MARRIED_TO', 'ENGAGED_TO',
       'DIVORCED_FROM', 'GRANDPARENT_OF', 'GRANDCHILD_OF', 'UNCLE_AUNT_OF',
@@ -273,7 +273,7 @@ const relationshipSchemas = {
 const searchSchemas = {
   query: Joi.object({
     q: Joi.string().trim().min(1).max(200).required(),
-    type: Joi.string().valid('person', 'event', 'all').default('all'),
+    type: Joi.string().valid('user', 'event', 'all').default('all'),
     limit: Joi.number().integer().min(1).max(100).default(20),
     offset: Joi.number().integer().min(0).default(0),
     filters: Joi.object({
@@ -329,7 +329,7 @@ const validate = (schema, property = 'body') => {
 
 module.exports = {
   userSchemas,
-  personSchemas,
+  familyMemberSchemas,
   familyTreeSchemas,
   eventSchemas,
   relationshipSchemas,

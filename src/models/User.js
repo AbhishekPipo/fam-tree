@@ -16,6 +16,11 @@ class User {
     // Demographics
     this.gender = data.gender;
     this.dateOfBirth = data.dateOfBirth || null;
+    this.dateOfDeath = data.dateOfDeath || null;
+    
+    // Family tree specific fields
+    this.isAlive = data.isAlive !== undefined ? data.isAlive : true;
+    this.isAppUser = data.isAppUser !== undefined ? data.isAppUser : true;
     
     // Contact & Location
     this.email = data.email || null;
@@ -93,6 +98,7 @@ class User {
     // Timestamps
     this.createdAt = data.createdAt || new Date().toISOString();
     this.updatedAt = data.updatedAt || new Date().toISOString();
+    this.createdBy = data.createdBy || null; // User ID who added this family member
     
     // Subscription/Premium
     this.subscriptionType = data.subscriptionType || 'free';
@@ -263,7 +269,7 @@ class User {
       'role', 'isActive', 'isEmailVerified', 'emailVerificationToken',
       'isPhoneVerified', 'phoneOtp', 'phoneOtpExpires', 'phoneOtpAttempts',
       'passwordResetToken', 'passwordResetExpires', 'subscriptionType',
-      'createdAt', 'updatedAt'
+      'createdAt', 'updatedAt', 'isAlive', 'isAppUser', 'createdBy'
     ];
     
     primitiveFields.forEach(field => {
