@@ -16,9 +16,9 @@ class Neo4jDatabase {
           process.env.NEO4J_PASSWORD || 'password'
         ),
         {
-          maxConnectionLifetime: 3 * 60 * 60 * 1000, // 3 hours
-          maxConnectionPoolSize: 50,
-          connectionAcquisitionTimeout: 2 * 60 * 1000, // 2 minutes
+          maxConnectionLifetime: 30 * 1000, // 30 seconds
+          maxConnectionPoolSize: 5,
+          connectionAcquisitionTimeout: 5 * 1000, // 5 seconds
           disableLosslessIntegers: true
         }
       );

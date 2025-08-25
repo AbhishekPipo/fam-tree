@@ -9,6 +9,12 @@ class AppError extends Error {
   }
 }
 
+const catchAsync = (fn) => {
+  return (req, res, next) => {
+    fn(req, res, next).catch(next);
+  };
+};
+
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
@@ -68,4 +74,4 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-module.exports = { AppError, errorHandler };
+module.exports = { AppError, catchAsync, errorHandler };

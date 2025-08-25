@@ -15,6 +15,8 @@ const familyRoutes = require('./src/routes/familyRoutes');
 const searchRoutes = require('./src/routes/searchRoutes');
 const dnaRoutes = require('./src/routes/dnaRoutes');
 const gedcomRoutes = require('./src/routes/gedcomRoutes');
+// const eventRoutes = require('./src/routes/eventRoutes');
+// const postRoutes = require('./src/routes/postRoutes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -102,7 +104,6 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -110,6 +111,8 @@ app.use('/api/family', familyRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/dna', dnaRoutes);
 app.use('/api/gedcom', gedcomRoutes);
+// app.use('/api/events', eventRoutes);
+// app.use('/api/posts', postRoutes);
 
 // Swagger JSON endpoint
 app.get('/api-docs/swagger.json', (req, res) => {
@@ -130,9 +133,23 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   }
 }));
 
-// Serve the main HTML page
+// API root endpoint
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.json({
+    success: true,
+    message: 'Family Tree API is running',
+    version: '1.0.0',
+    documentation: '/api-docs',
+    endpoints: {
+      auth: '/api/auth',
+      family: '/api/family',
+      events: '/api/events',
+      posts: '/api/posts',
+      search: '/api/search',
+      dna: '/api/dna',
+      gedcom: '/api/gedcom'
+    }
+  });
 });
 
 /**
@@ -215,13 +232,11 @@ const startServer = async () => {
       logger.info(`Family Tree Neo4j Server running on port ${PORT}`);
       logger.info(`API URL: http://localhost:${PORT}/api`);
       logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
-      logger.info(`Web Interface: http://localhost:${PORT}`);
       logger.info(`Health Check: http://localhost:${PORT}/api/health`);
       
       console.log(`🌳 Family Tree Neo4j Server running on port ${PORT}`);
       console.log(`🔗 API URL: http://localhost:${PORT}/api`);
       console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-      console.log(`🌐 Web Interface: http://localhost:${PORT}`);
       console.log(`💊 Health Check: http://localhost:${PORT}/api/health`);
       console.log(`
 🎯 Quick Start:
@@ -229,6 +244,10 @@ const startServer = async () => {
 2. Seed with sample data: npm run seed
 3. Visit API docs: http://localhost:${PORT}/api-docs
 4. Test login with: prashanth@family.com / FamilyTree123!
+
+📱 New APIs Available:
+- Events: http://localhost:${PORT}/api/events
+- Posts/Feed: http://localhost:${PORT}/api/posts
       `);
     });
   } catch (error) {

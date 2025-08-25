@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const { User } = require('../models');
 const { generateToken } = require('../middleware/auth');
 const { AppError } = require('../middleware/errorHandler');
 const database = require('../config/database');

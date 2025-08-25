@@ -8,7 +8,12 @@ const {
   addSpouse,
   removeFamilyMember,
   getRelationshipTypes,
-  getRelationshipStats
+  getRelationshipDropdown,
+  getRelationshipStats,
+  getRelationshipSuggestions,
+  validateRelationship,
+  bulkAddFamilyMembers,
+  getFamilyMemberSuggestions
 } = require('../controllers/familyController');
 const { authenticateToken } = require('../middleware/auth');
 const { validateFamilyMember } = require('../middleware/validation');
@@ -31,6 +36,13 @@ router.delete('/member/:memberId', removeFamilyMember);
 
 // Utility routes
 router.get('/relationship-types', getRelationshipTypes);
+router.get('/relationship-dropdown', getRelationshipDropdown);
 router.get('/stats', getRelationshipStats);
+
+// New enhanced routes
+router.get('/relationship-suggestions/:relationshipType', getRelationshipSuggestions);
+router.post('/validate-relationship', validateRelationship);
+router.post('/bulk-add', bulkAddFamilyMembers);
+router.get('/member-suggestions', getFamilyMemberSuggestions);
 
 module.exports = router;

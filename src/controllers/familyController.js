@@ -1,5 +1,6 @@
 const familyService = require('../services/familyService');
-const { AppError } = require('../middleware/errorHandler');
+const { catchAsync, AppError } = require('../middleware/errorHandler');
+const { RelationshipType } = require('../models');
 
 /**
  * @swagger
@@ -230,15 +231,18 @@ const getAllFamilyMembers = async (req, res, next) => {
  *       409:
  *         description: User with email already exists
  */
+// Add a new family member with enhanced relationship support
 const addFamilyMember = async (req, res, next) => {
   try {
-    const newMember = await familyService.addFamilyMember(req.body, req.user.id);
-    
+    const result = await familyService.addFamilyMember(req.body, req.user.id);
+
     res.status(201).json({
       success: true,
-      message: 'Family member added successfully',
+      message: result.message,
       data: {
-        user: newMember
+        user: result.user,
+        relationship: result.relationship,
+        requiresVerification: result.requiresVerification
       }
     });
   } catch (error) {
@@ -424,6 +428,59 @@ const getRelationshipTypes = async (req, res, next) => {
 
 /**
  * @swagger
+ * /family/relationship-dropdown:
+ *   get:
+ *     summary: Get relationship types for dropdown
+ *     description: Retrieves relationship types formatted for dropdown selection with IDs and labels
+ *     tags: [Family Tree]
+ *     responses:
+ *       200:
+ *         description: Relationship dropdown options retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         relationshipOptions:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "father"
+ *                               label:
+ *                                 type: string
+ *                                 example: "Father"
+ *                               category:
+ *                                 type: string
+ *                                 example: "Parents"
+ *                               description:
+ *                                 type: string
+ *                                 example: "Biological or adoptive father"
+ */
+const getRelationshipDropdown = async (req, res, next) => {
+  try {
+    const relationshipOptions = familyService.getRelationshipDropdownOptions();
+    
+    res.json({
+      success: true,
+      data: {
+        relationshipOptions
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @swagger
  * /family/stats:
  *   get:
  *     summary: Get family relationship statistics
@@ -493,14 +550,187 @@ const getRelationshipStats = async (req, res, next) => {
   }
 };
 
+// Get relationship suggestions for adding family members
+const getRelationshipSuggestions = async (req, res, next) => {
+  try {
+    const { gender } = req.query;
+    const suggestions = await familyService.getRelationshipSuggestions(req.user.id, gender);
+
+    res.json({
+      success: true,
+      data: {
+        suggestions,
+        currentUserId: req.user.id
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Validate relationship compatibility
+const validateRelationship = async (req, res, next) => {
+  try {
+    const { relationshipType, memberData } = req.body;
+    
+    // Use private validation method from service
+    const validationErrors = familyService._validateFamilyMemberData(memberData, relationshipType);
+    
+    const isValid = validationErrors.length === 0;
+    
+    res.json({
+      success: true,
+      data: {
+        isValid,
+        errors: validationErrors,
+        suggestions: isValid ? [] : [
+          'Please correct the validation errors above',
+          'Ensure the relationship type matches the person\'s gender',
+          'Check that the age is appropriate for the relationship'
+        ]
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Bulk add family members (for importing family data)
+const bulkAddFamilyMembers = async (req, res, next) => {
+  try {
+    const { members } = req.body; // Array of member objects
+    
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Members array is required and cannot be empty'
+      });
+    }
+
+    const results = {
+      successful: [],
+      failed: [],
+      totalProcessed: members.length
+    };
+
+    // Process each member
+    for (const memberData of members) {
+      try {
+        const result = await familyService.addFamilyMember(memberData, req.user.id);
+        results.successful.push({
+          member: result.user,
+          relationship: result.relationship,
+          message: result.message
+        });
+      } catch (error) {
+        results.failed.push({
+          memberData: {
+            name: `${memberData.firstName} ${memberData.lastName}`,
+            relationship: memberData.relationshipType,
+            email: memberData.email
+          },
+          error: error.message,
+          code: error.code
+        });
+      }
+    }
+
+    const statusCode = results.failed.length === 0 ? 201 : 207; // 207 = Multi-Status
+    const message = `Processed ${results.totalProcessed} members. ${results.successful.length} successful, ${results.failed.length} failed.`;
+
+    res.status(statusCode).json({
+      success: results.failed.length === 0,
+      message,
+      data: results
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get family member suggestions based on existing relationships
+const getFamilyMemberSuggestions = async (req, res, next) => {
+  try {
+    const familyTree = await familyService.getFamilyTree(req.user.id);
+    
+    // Analyze existing family structure and suggest missing relationships
+    const suggestions = {
+      parents: [],
+      children: [],
+      siblings: [],
+      spouse: [],
+      grandparents: [],
+      extended: []
+    };
+
+    // Check for missing parents
+    const hasParents = familyTree.ancestors.some(member =>
+      ['father', 'mother'].includes(member.relationship)
+    );
+    if (!hasParents) {
+      suggestions.parents.push(
+        { relationship: 'father', priority: 'high', reason: 'No father in family tree' },
+        { relationship: 'mother', priority: 'high', reason: 'No mother in family tree' }
+      );
+    }
+
+    // Check for missing spouse
+    const hasSpouse = familyTree.adjacent.some(member =>
+      ['husband', 'wife', 'partner'].includes(member.relationship)
+    );
+    if (!hasSpouse) {
+      suggestions.spouse.push(
+        { relationship: 'husband', priority: 'medium', reason: 'No spouse/partner in family tree' },
+        { relationship: 'wife', priority: 'medium', reason: 'No spouse/partner in family tree' },
+        { relationship: 'partner', priority: 'medium', reason: 'No spouse/partner in family tree' }
+      );
+    }
+
+    // Check for missing grandparents
+    const hasGrandparents = familyTree.ancestors.some(member =>
+      ['grandfather', 'grandmother'].includes(member.relationship)
+    );
+    if (!hasGrandparents && hasParents) {
+      suggestions.grandparents.push(
+        { relationship: 'grandfather', priority: 'medium', reason: 'Add your grandparents' },
+        { relationship: 'grandmother', priority: 'medium', reason: 'Add your grandparents' }
+      );
+    }
+
+    res.json({
+      success: true,
+      data: {
+        suggestions,
+        familyTreeSummary: {
+          totalMembers: familyTree.totalMembers,
+          hasParents,
+          hasSpouse,
+          hasGrandparents,
+          hasChildren: familyTree.descendants.length > 0,
+          hasSiblings: familyTree.adjacent.some(member =>
+            ['brother', 'sister'].includes(member.relationship)
+          )
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getFamilyTree,
   getExtendedFamilyTree,
   getSpouseFamilyTree,
   getAllFamilyMembers,
   addFamilyMember,
+  getRelationshipSuggestions,
+  validateRelationship,
+  bulkAddFamilyMembers,
+  getFamilyMemberSuggestions,
   addSpouse,
   removeFamilyMember,
   getRelationshipTypes,
+  getRelationshipDropdown,
   getRelationshipStats
 };
