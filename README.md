@@ -1,337 +1,179 @@
-# Family Tree Neo4j Application
+# Family Tree Application - JanusGraph Edition
 
-A comprehensive genealogy platform built with Node.js, Express.js, and Neo4j graph database. This application enables users to create, manage, and explore complex family relationships with advanced features like DNA tracking, event management, media organization, and collaborative tree building.
+A modern family tree application built with JanusGraph and MSG91 OTP authentication.
 
-## 🚀 Features
+## Features
 
-### Core Features
-- **Advanced Relationship Modeling** - Handle complex family scenarios with graph database
-- **Real-time Collaboration** - Multi-user tree management
-- **Privacy-First Design** - Granular field-level privacy controls
-- **Scalable Architecture** - Supports 10,000+ person family trees
-- **Production-Ready** - Comprehensive validation and error handling
+- 📱 SMS OTP Authentication via MSG91
+- 🌐 JanusGraph-powered family tree storage
+- 👨‍👩‍👧‍👦 Family relationship management
+- 🔐 JWT-based authentication
+- 🚀 RESTful API design
+- ⚡ Real-time relationship queries
 
-### Advanced Features
-- **DNA Integration** - Track DNA matches and relationships
-- **GEDCOM Import/Export** - Standard genealogy file format support
-- **Advanced Search** - Full-text search with relationship path finding
-- **Media Management** - Photo and document organization
-- **Event Tracking** - Life events with timeline views
-- **Relationship Suggestions** - AI-powered relationship discovery
+## Technology Stack
 
-## 🏗️ Technology Stack
+- **Database**: JanusGraph (Graph Database)
+- **Backend**: Node.js, Express.js
+- **Authentication**: MSG91 OTP + JWT
+- **Graph Queries**: Gremlin
+- **Security**: Helmet, CORS, Rate Limiting
 
-### Backend
-- **Runtime**: Node.js 18.x
-- **Framework**: Express.js 4.x
-- **Database**: Neo4j AuraDB 5.x
-- **Authentication**: JWT + Bcrypt
-- **Validation**: Joi 17.x
-- **Documentation**: Swagger/OpenAPI 3.x
-- **File Upload**: Multer
-- **Logging**: Winston
-- **Security**: Helmet, Rate Limiting
+## Prerequisites
 
-### Development & Testing
-- **Testing**: Jest + Supertest
-- **Code Quality**: ESLint + Prettier
-- **Process Manager**: PM2 (production)
+- Node.js (v16 or higher)
+- JanusGraph instance running (localhost:8182 by default)
+- MSG91 account for OTP services
 
-## 📋 Prerequisites
+## Installation
 
-- Node.js 18.x or higher
-- Neo4j AuraDB account or local Neo4j instance
-- npm or yarn package manager
-
-## 🛠️ Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd fam-tree
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Environment Configuration**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Update `.env` with your configuration:
-   ```env
-   # Neo4j Database
-   NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
-   NEO4J_USERNAME=neo4j
-   NEO4J_PASSWORD=your-password
-   
-   # JWT Configuration
-   JWT_SECRET=your-super-secret-jwt-key
-   JWT_EXPIRES_IN=24h
-   
-   # Server Configuration
-   PORT=3000
-   NODE_ENV=development
-   ```
-
-4. **Database Setup**
-   ```bash
-   npm run setup-db
-   ```
-
-5. **Seed Sample Data** (Optional)
-   ```bash
-   npm run seed
-   ```
-
-## 🚀 Running the Application
-
-### Development Mode
+1. Clone the repository:
 ```bash
-npm run dev
+git clone <repository-url>
+cd fam-tree
 ```
 
-### Production Mode
+2. Install dependencies:
 ```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Start the server:
+```bash
+# Development
+npm run dev
+
+# Production
 npm start
 ```
 
-### Available Scripts
-- `npm start` - Start production server
-- `npm run dev` - Start development server with nodemon
-- `npm run setup-db` - Setup database constraints and indexes
-- `npm run seed` - Seed database with sample data
-- `npm run reset-db` - Reset database (⚠️ Deletes all data)
-- `npm test` - Run test suite
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Run tests with coverage report
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
-- `npm run format` - Format code with Prettier
+## Environment Variables
 
-## 📚 API Documentation
-
-Once the server is running, visit:
-- **API Documentation**: http://localhost:3000/api-docs
-- **Health Check**: http://localhost:3000/api/health
-
-### API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
-
-#### Family Management
-- `GET /api/family/trees` - Get user's family trees
-- `POST /api/family/trees` - Create family tree
-- `GET /api/family/trees/:id` - Get family tree details
-- `PUT /api/family/trees/:id` - Update family tree
-- `DELETE /api/family/trees/:id` - Delete family tree
-
-#### Person Management
-- `GET /api/family/persons` - Get persons
-- `POST /api/family/persons` - Create person
-- `GET /api/family/persons/:id` - Get person details
-- `PUT /api/family/persons/:id` - Update person
-- `DELETE /api/family/persons/:id` - Delete person
-
-#### Relationships
-- `POST /api/family/relationships` - Create relationship
-- `GET /api/family/persons/:id/relationships` - Get person's relationships
-- `DELETE /api/family/relationships/:id` - Delete relationship
-
-#### Advanced Search
-- `GET /api/search` - Advanced search
-- `GET /api/search/suggestions` - Search suggestions
-- `GET /api/search/relationship-path` - Find relationship paths
-- `GET /api/search/relationship-suggestions/:personId` - Get relationship suggestions
-
-#### DNA Features
-- `POST /api/dna/:personId` - Add DNA data
-- `GET /api/dna/:personId` - Get DNA data
-- `GET /api/dna/:personId/matches` - Find DNA matches
-- `POST /api/dna/matches` - Add DNA match
-- `GET /api/dna/:personId/analysis` - DNA analysis
-- `GET /api/dna/:personId/report` - Generate DNA report
-
-#### GEDCOM Import/Export
-- `POST /api/gedcom/import` - Import GEDCOM file
-- `GET /api/gedcom/export/:treeId` - Export to GEDCOM
-- `POST /api/gedcom/validate` - Validate GEDCOM file
-- `POST /api/gedcom/preview` - Preview GEDCOM contents
-
-## 🧪 Testing
-
-### Run Tests
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
 ```
+# JanusGraph Configuration
+JANUSGRAPH_HOST=localhost
+JANUSGRAPH_PORT=8182
+JANUSGRAPH_USERNAME=
+JANUSGRAPH_PASSWORD=
 
-### Test Structure
-```
-tests/
-├── setup.js              # Test setup and utilities
-├── globalSetup.js         # Global test setup
-├── globalTeardown.js      # Global test cleanup
-├── models/               # Model tests
-│   ├── Person.test.js
-│   ├── User.test.js
-│   └── FamilyTree.test.js
-├── routes/               # Route tests
-│   ├── auth.test.js
-│   └── family.test.js
-└── services/             # Service tests
-    ├── searchService.test.js
-    └── dnaService.test.js
-```
+# MSG91 Configuration
+MSG91_API_KEY=your_msg91_api_key_here
+MSG91_TEMPLATE_ID=your_template_id_here
+MSG91_AUTH_KEY=your_auth_key_here
 
-## 🔒 Security Features
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=24h
 
-- **Authentication**: JWT-based authentication
-- **Authorization**: Role-based access control
-- **Rate Limiting**: API endpoint protection
-- **Input Validation**: Comprehensive data validation
-- **Data Sanitization**: Protection against injection attacks
-- **Security Headers**: Helmet.js security headers
-- **Privacy Controls**: Granular field-level privacy settings
-
-## 📊 Database Schema
-
-### Core Entities
-- **Person** - Individual family members with 60+ properties
-- **User** - System users extending Person
-- **FamilyTree** - Family tree containers
-- **Event** - Life events and milestones
-- **Media** - Photos, documents, and files
-- **DNA** - DNA test results and matches
-
-### Relationship Types
-- Blood relationships: `PARENT_OF`, `CHILD_OF`, `SIBLING_OF`, `GRANDPARENT_OF`, etc.
-- Marriage relationships: `MARRIED_TO`, `DIVORCED_FROM`, `ENGAGED_TO`
-- System relationships: `OWNS`, `MEMBER_OF`, `BELONGS_TO`
-
-## 🚀 Deployment
-
-### Environment Variables
-```env
-# Production Environment
-NODE_ENV=production
+# Server Configuration
 PORT=3000
+NODE_ENV=development
 
-# Database
-NEO4J_URI=neo4j+s://production-instance.databases.neo4j.io
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=secure-production-password
-
-# Security
-JWT_SECRET=super-secure-production-jwt-secret
+# OTP Configuration
+OTP_EXPIRY_MINUTES=10
+MAX_OTP_ATTEMPTS=3
 ```
 
-### Using PM2
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/send-otp` - Send OTP to phone number
+- `POST /api/auth/verify-otp` - Verify OTP and login/register
+- `POST /api/auth/resend-otp` - Resend OTP
+- `GET /api/auth/profile` - Get user profile (protected)
+- `PUT /api/auth/profile` - Update user profile (protected)
+- `POST /api/auth/logout` - Logout (protected)
+
+### Health Check
+
+- `GET /health` - Server health status
+
+## Usage Examples
+
+### 1. Send OTP
 ```bash
-# Install PM2 globally
-npm install -g pm2
-
-# Start application with PM2
-pm2 start server.js --name "family-tree-api"
-
-# Monitor
-pm2 monit
-
-# View logs
-pm2 logs family-tree-api
+curl -X POST http://localhost:3000/api/auth/send-otp \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890"}'
 ```
 
-## 📈 Performance
+### 2. Verify OTP and Register/Login
+```bash
+curl -X POST http://localhost:3000/api/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+1234567890",
+    "otp": "123456",
+    "userData": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com"
+    }
+  }'
+```
 
-### Current Capabilities
-- **Database**: Supports 10,000+ person trees
-- **Relationships**: Manages complex multi-generational families
-- **Search**: Full-text search across all entities
-- **Concurrency**: Multi-user collaboration support
-- **Storage**: Unlimited media file support
+### 3. Get Profile (Protected Route)
+```bash
+curl -X GET http://localhost:3000/api/auth/profile \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
-### Optimization Features
-- Database indexing for fast queries
-- Relationship path caching
-- File upload optimization
-- Query result pagination
-- Connection pooling
+## Project Structure
 
-## 🤝 Contributing
+```
+src/
+├── config/
+│   └── database.js          # JanusGraph connection
+├── controllers/
+│   └── authController.js    # Authentication logic
+├── middleware/
+│   └── auth.js             # JWT authentication middleware
+├── models/
+│   └── User.js             # User model for JanusGraph
+├── routes/
+│   └── authRoutes.js       # Authentication routes
+├── services/
+│   └── otpService.js       # MSG91 OTP service
+└── utils/                  # Utility functions
+```
+
+## Development Mode
+
+In development mode (NODE_ENV=development), the OTP service will:
+- Log OTPs to console instead of sending SMS
+- Accept any OTP for testing purposes
+- Provide detailed error messages
+
+## Graph Schema
+
+The application uses the following JanusGraph schema:
+
+### Vertex Labels
+- `user` - Represents family members
+- `family` - Represents family groups
+
+### Edge Labels
+- `parentOf` - Parent-child relationships
+- `childOf` - Child-parent relationships  
+- `spouseOf` - Spouse relationships
+- `siblingOf` - Sibling relationships
+- `memberOf` - Family group membership
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-### Development Guidelines
-- Follow ESLint configuration
-- Write tests for new features
-- Update documentation
-- Follow semantic versioning
+## License
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-### Quick Start
-1. Setup database: `npm run setup-db`
-2. Seed with sample data: `npm run seed`
-3. Visit API docs: http://localhost:3000/api-docs
-4. Test login with: `prashanth@family.com` / `FamilyTree123!`
-
-### Common Issues
-
-**Database Connection Issues**
-- Verify Neo4j credentials in `.env`
-- Check network connectivity to Neo4j instance
-- Ensure database is running
-
-**Authentication Issues**
-- Check JWT_SECRET in environment variables
-- Verify token expiration settings
-- Clear browser cache/cookies
-
-**File Upload Issues**
-- Check upload directory permissions
-- Verify file size limits
-- Ensure supported file types
-
-### Getting Help
-- Check the API documentation at `/api-docs`
-- Review test files for usage examples
-- Check logs in `logs/` directory
-
-## 🔄 Changelog
-
-### Version 1.0.0
-- Initial release with core functionality
-- Person and relationship management
-- Family tree creation and management
-- Authentication and authorization
-- Advanced search capabilities
-- DNA integration features
-- GEDCOM import/export
-- Comprehensive test suite
-- Production-ready security features
-
----
-
-**Built with ❤️ for preserving family history and connections**
+MIT License
