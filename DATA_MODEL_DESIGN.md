@@ -124,7 +124,7 @@
 │  ├─ Family member addition with automatic relationship inference                   │
 │  ├─ Event creation with participant management                                     │
 │  ├─ Social feed with personalized content                                          │
-│  ├─ Search across persons, events, and posts                                       │
+│  ├─ Search across users, events, and posts                                        │
 │  └─ Media upload and attachment handling                                           │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -392,7 +392,7 @@ IN_LAW_OF: {
 ```
 
 **Validation Rules**:
-- `preventSelfRelation`: Person cannot have relationship with themselves
+- `preventSelfRelation`: User cannot have relationship with themselves
 - `preventCircularRelation`: Prevents impossible family loops
 - `ageValidation`: Parent must be older than child
 - `symmetricRelation`: Both directions must exist for symmetric relationships
@@ -451,10 +451,10 @@ GET    /api/events/{id}               - Get specific event
 POST   /api/events                    - Create new event
 PUT    /api/events/{id}               - Update event
 DELETE /api/events/{id}               - Delete event
-GET    /api/events/person/{personId}  - Get events for a person
+GET    /api/events/user/{userId}  - Get events for a user
 GET    /api/events/search?q={query}   - Search events
 POST   /api/events/{id}/participants  - Add participant to event
-DELETE /api/events/{id}/participants/{personId} - Remove participant
+DELETE /api/events/{id}/participants/{userId} - Remove participant
 GET    /api/events/{id}/participants  - Get event participants
 ```
 
@@ -491,7 +491,7 @@ GET    /api/family/member-suggestions - Get family member suggestions
 
 ### Relationship Management APIs ✅ **READY**
 ```
-GET    /api/family/relationships/{personId} - Get all relationships for a person
+GET    /api/family/relationships/{userId} - Get all relationships for a user
 POST   /api/family/relationships     - Create new relationship
 PUT    /api/family/relationships/{id} - Update relationship
 DELETE /api/family/relationships/{id} - Delete relationship

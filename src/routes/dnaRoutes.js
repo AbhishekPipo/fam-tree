@@ -11,19 +11,19 @@ router.use(authenticateToken);
 
 /**
  * @swagger
- * /api/dna/{personId}:
+ * /api/dna/{userId}:
  *   post:
- *     summary: Add DNA data for a person
+ *     summary: Add DNA data for a user
  *     tags: [DNA]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: personId
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: Person ID
+ *         description: User ID
  *     requestBody:
  *       required: true
  *       content:
@@ -54,12 +54,12 @@ router.use(authenticateToken);
  *       201:
  *         description: DNA data added successfully
  */
-router.post('/:personId', async (req, res, next) => {
+router.post('/:userId', async (req, res, next) => {
   try {
-    const { personId } = req.params;
+    const { userId } = req.params;
     const dnaData = req.body;
     
-    const result = await DNAService.addDNAData(personId, dnaData);
+    const result = await DNAService.addDNAData(userId, dnaData);
     
     res.status(201).json({
       success: true,
@@ -73,33 +73,33 @@ router.post('/:personId', async (req, res, next) => {
 
 /**
  * @swagger
- * /api/dna/{personId}:
+ * /api/dna/{userId}:
  *   get:
- *     summary: Get DNA data for a person
+ *     summary: Get DNA data for a user
  *     tags: [DNA]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: personId
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: Person ID
+ *         description: User ID
  *     responses:
  *       200:
  *         description: DNA data retrieved successfully
  *       404:
  *         description: No DNA data found
  */
-router.get('/:personId', async (req, res, next) => {
+router.get('/:userId', async (req, res, next) => {
   try {
-    const { personId } = req.params;
+    const { userId } = req.params;
     
-    const dnaData = await DNAService.getDNAData(personId);
+    const dnaData = await DNAService.getDNAData(userId);
     
     if (!dnaData) {
-      throw new AppError('No DNA data found for this person', 404, 'DNA_DATA_NOT_FOUND');
+      throw new AppError('No DNA data found for this user', 404, 'DNA_DATA_NOT_FOUND');
     }
     
     res.json({
@@ -113,19 +113,19 @@ router.get('/:personId', async (req, res, next) => {
 
 /**
  * @swagger
- * /api/dna/{personId}/matches:
+ * /api/dna/{userId}/matches:
  *   get:
- *     summary: Find DNA matches for a person
+ *     summary: Find DNA matches for a user
  *     tags: [DNA]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: personId
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: Person ID
+ *         description: User ID
  *       - in: query
  *         name: minSharedCM
  *         schema:
@@ -137,17 +137,17 @@ router.get('/:personId', async (req, res, next) => {
  *       200:
  *         description: DNA matches found
  */
-router.get('/:personId/matches', async (req, res, next) => {
+router.get('/:userId/matches', async (req, res, next) => {
   try {
-    const { personId } = req.params;
+    const { userId } = req.params;
     const { minSharedCM = 7 } = req.query;
     
-    const matches = await DNAService.findDNAMatches(personId, parseFloat(minSharedCM));
+    const matches = await DNAService.findDNAMatches(userId, parseFloat(minSharedCM));
     
     res.json({
       success: true,
       data: {
-        personId,
+        userId,
         minSharedCM: parseFloat(minSharedCM),
         matches
       }
@@ -161,7 +161,7 @@ router.get('/:personId/matches', async (req, res, next) => {
  * @swagger
  * /api/dna/matches:
  *   post:
- *     summary: Add DNA match relationship between two persons
+ *     summary: Add DNA match relationship between two users
  *     tags: [DNA]
  *     security:
  *       - bearerAuth: []
@@ -172,13 +172,13 @@ router.get('/:personId/matches', async (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
- *               - person1Id
- *               - person2Id
+ *               - user1Id
+ *               - user2Id
  *               - sharedCM
  *             properties:
- *               person1Id:
+ *               user1Id:
  *                 type: string
- *               person2Id:
+ *               user2Id:
  *                 type: string
  *               sharedCM:
  *                 type: number
@@ -205,17 +205,17 @@ router.get('/:personId/matches', async (req, res, next) => {
  */
 router.post('/matches', async (req, res, next) => {
   try {
-    const { person1Id, person2Id, ...matchData } = req.body;
+    const { user1Id, user2Id, ...matchData } = req.body;
     
-    if (!person1Id || !person2Id) {
-      throw new AppError('Both person1Id and person2Id are required', 400, 'MISSING_PERSON_IDS');
+    if (!user1Id || !user2Id) {
+      throw new AppError('Both user1Id and user2Id are required', 400, 'MISSING_USER_IDS');
     }
     
-    if (person1Id === person2Id) {
-      throw new AppError('Cannot create DNA match with the same person', 400, 'SAME_PERSON_MATCH');
+    if (user1Id === user2Id) {
+      throw new AppError('Cannot create DNA match with the same user', 400, 'SAME_USER_MATCH');
     }
     
-    const result = await DNAService.addDNAMatch(person1Id, person2Id, matchData);
+    const result = await DNAService.addDNAMatch(user1Id, user2Id, matchData);
     
     res.status(201).json({
       success: true,

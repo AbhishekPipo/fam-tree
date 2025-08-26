@@ -102,12 +102,12 @@ class DNAService {
 
   /**
    * Add DNA match relationship
-   * @param {string} person1Id - First person ID
-   * @param {string} person2Id - Second person ID
+   * @param {string} user1Id - First user ID
+   * @param {string} user2Id - Second user ID
    * @param {Object} matchData - Match data
    * @returns {Object} Created match relationship
    */
-  static async addDNAMatch(person1Id, person2Id, matchData) {
+  static async addDNAMatch(user1Id, user2Id, matchData) {
     const {
       sharedCM,
       sharedSegments,
@@ -119,9 +119,9 @@ class DNAService {
     } = matchData;
 
     const cypher = `
-      MATCH (p1:Person {id: $person1Id})
-      MATCH (p2:Person {id: $person2Id})
-      CREATE (p1)-[match:DNA_MATCH {
+      MATCH (u1:User {id: $user1Id})
+      MATCH (u2:User {id: $user2Id})
+      CREATE (u1)-[match:DNA_MATCH {
         sharedCM: $sharedCM,
         sharedSegments: $sharedSegments,
         longestSegment: $longestSegment,
@@ -131,13 +131,13 @@ class DNAService {
         notes: $notes,
         createdAt: $createdAt,
         updatedAt: $updatedAt
-      }]->(p2)
+      }]->(u2)
       RETURN match
     `;
 
     const result = await database.runQuery(cypher, {
-      person1Id,
-      person2Id,
+      user1Id,
+      user2Id,
       sharedCM: parseFloat(sharedCM),
       sharedSegments: parseInt(sharedSegments),
       longestSegment: parseFloat(longestSegment),
@@ -157,17 +157,17 @@ class DNAService {
   }
 
   /**
-   * Get DNA data for a person
-   * @param {string} personId - Person ID
+   * Get DNA data for a user
+   * @param {string} userId - User ID
    * @returns {Object} DNA data
    */
-  static async getDNAData(personId) {
+  static async getDNAData(userId) {
     const cypher = `
-      MATCH (p:Person {id: $personId})-[:HAS_DNA]->(dna:DNA)
-      RETURN p as person, dna
+      MATCH (u:User {id: $userId})-[:HAS_DNA]->(dna:DNA)
+      RETURN u as user, dna
     `;
 
-    const result = await database.runQuery(cypher, { personId });
+    const result = await database.runQuery(cypher, { userId });
     
     if (result.records.length === 0) {
       return null;
@@ -191,20 +191,20 @@ class DNAService {
     }
 
     return {
-      person: database.constructor.extractNodeProperties(record, 'person'),
+      user: database.constructor.extractNodeProperties(record, 'user'),
       dna: dnaData
     };
   }
 
   /**
    * Analyze DNA matches for relationship predictions
-   * @param {string} personId - Person ID
+   * @param {string} userId - User ID
    * @returns {Object} Analysis results
    */
-  static async analyzeDNAMatches(personId) {
+  static async analyzeDNAMatches(userId) {
     const cypher = `
-      MATCH (p:Person {id: $personId})
-      OPTIONAL MATCH (p)-[match:DNA_MATCH]-(other:Person)
+      MATCH (u:User {id: $userId})
+      OPTIONAL MATCH (u)-[match:DNA_MATCH]-(other:User)
       RETURN 
         count(match) as totalMatches,
         avg(match.sharedCM) as avgSharedCM,
@@ -212,16 +212,16 @@ class DNAService {
         min(match.sharedCM) as minSharedCM,
         collect(DISTINCT match.estimatedRelationship) as relationshipTypes,
         collect({
-          person: other,
+          user: other,
           sharedCM: match.sharedCM,
           relationship: match.estimatedRelationship
         }) as matches
     `;
 
-    const result = await database.runQuery(cypher, { personId });
+    const result = await database.runQuery(cypher, { userId });
     
     if (result.records.length === 0) {
-      throw new AppError('Person not found', 404, 'PERSON_NOT_FOUND');
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
     }
 
     const record = result.records[0];
@@ -233,7 +233,7 @@ class DNAService {
       minSharedCM: record.get('minSharedCM'),
       relationshipTypes: record.get('relationshipTypes'),
       matches: record.get('matches').map(match => ({
-        person: match.person ? database.constructor.extractNodeProperties({ get: () => match.person }, 'person') : null,
+        user: match.user ? database.constructor.extractNodeProperties({ get: () => match.user }, 'user') : null,
         sharedCM: match.sharedCM,
         relationship: match.relationship
       }))
@@ -288,22 +288,22 @@ class DNAService {
   }
 
   /**
-   * Generate DNA report for a person
-   * @param {string} personId - Person ID
+   * Generate DNA report for a user
+   * @param {string} userId - User ID
    * @returns {Object} DNA report
    */
-  static async generateDNAReport(personId) {
-    const dnaData = await this.getDNAData(personId);
+  static async generateDNAReport(userId) {
+    const dnaData = await this.getDNAData(userId);
     
     if (!dnaData) {
-      throw new AppError('No DNA data found for this person', 404, 'DNA_DATA_NOT_FOUND');
+      throw new AppError('No DNA data found for this user', 404, 'DNA_DATA_NOT_FOUND');
     }
 
-    const matches = await this.findDNAMatches(personId);
-    const analysis = await this.analyzeDNAMatches(personId);
+    const matches = await this.findDNAMatches(userId);
+    const analysis = await this.analyzeDNAMatches(userId);
 
     return {
-      person: dnaData.person,
+      user: dnaData.user,
       dnaData: dnaData.dna,
       matches,
       analysis,

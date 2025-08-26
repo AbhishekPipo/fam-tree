@@ -95,8 +95,8 @@ class FamilyTree {
     const cypher = `
       MATCH (ft:FamilyTree {id: $id})
       OPTIONAL MATCH (owner:User)-[:OWNS]->(ft)
-      OPTIONAL MATCH (ft)<-[:BELONGS_TO]-(person:Person)
-      RETURN ft, owner, count(DISTINCT person) as memberCount
+      OPTIONAL MATCH (ft)<-[:BELONGS_TO]-(user:User)
+      RETURN ft, owner, count(DISTINCT user) as memberCount
     `;
     
     const result = await database.runQuery(cypher, { id });
@@ -120,8 +120,8 @@ class FamilyTree {
   static async findByOwnerId(ownerId) {
     const cypher = `
       MATCH (owner:User {id: $ownerId})-[:OWNS]->(ft:FamilyTree)
-      OPTIONAL MATCH (ft)<-[:BELONGS_TO]-(person:Person)
-      RETURN ft, count(DISTINCT person) as memberCount
+      OPTIONAL MATCH (ft)<-[:BELONGS_TO]-(user:User)
+      RETURN ft, count(DISTINCT user) as memberCount
       ORDER BY ft.createdAt DESC
     `;
     
@@ -139,11 +139,11 @@ class FamilyTree {
       MATCH (user:User {id: $userId})
       OPTIONAL MATCH (user)-[:OWNS]->(ownedTree:FamilyTree)
       OPTIONAL MATCH (user)-[:MEMBER_OF]->(memberTree:FamilyTree)
-      OPTIONAL MATCH (ownedTree)<-[:BELONGS_TO]-(ownedPerson:Person)
-      OPTIONAL MATCH (memberTree)<-[:BELONGS_TO]-(memberPerson:Person)
+      OPTIONAL MATCH (ownedTree)<-[:BELONGS_TO]-(ownedUser:User)
+      OPTIONAL MATCH (memberTree)<-[:BELONGS_TO]-(memberUser:User)
       RETURN 
-        ownedTree, count(DISTINCT ownedPerson) as ownedMemberCount,
-        memberTree, count(DISTINCT memberPerson) as memberMemberCount
+        ownedTree, count(DISTINCT ownedUser) as ownedMemberCount,
+        memberTree, count(DISTINCT memberUser) as memberMemberCount
     `;
     
     const result = await database.runQuery(cypher, { userId });
@@ -316,12 +316,12 @@ class FamilyTree {
     return uniqueMembers;
   }
 
-  // Person management in tree
-  static async addPerson(treeId, personId, addedBy, generation = 0, branch = null) {
+  // User management in tree
+  static async addUser(treeId, userId, addedBy, generation = 0, branch = null) {
     const cypher = `
       MATCH (ft:FamilyTree {id: $treeId})
-      MATCH (person:Person {id: $personId})
-      MERGE (person)-[r:BELONGS_TO]->(ft)
+      MATCH (user:User {id: $userId})
+      MERGE (user)-[r:BELONGS_TO]->(ft)
       SET r.addedDate = $addedDate,
           r.addedBy = $addedBy,
           r.generation = $generation,
@@ -331,7 +331,7 @@ class FamilyTree {
 
     const result = await database.runQuery(cypher, {
       treeId,
-      personId,
+      userId,
       addedBy,
       generation,
       branch,
@@ -339,32 +339,32 @@ class FamilyTree {
     });
 
     if (result.records.length === 0) {
-      throw new AppError('Failed to add person to tree', 500, 'ADD_PERSON_FAILED');
+      throw new AppError('Failed to add user to tree', 500, 'ADD_USER_FAILED');
     }
 
     return database.constructor.extractRelationshipProperties(result.records[0], 'r');
   }
 
-  static async removePerson(treeId, personId) {
+  static async removeUser(treeId, userId) {
     const cypher = `
-      MATCH (person:Person {id: $personId})-[r:BELONGS_TO]->(ft:FamilyTree {id: $treeId})
+      MATCH (user:User {id: $userId})-[r:BELONGS_TO]->(ft:FamilyTree {id: $treeId})
       DELETE r
       RETURN count(r) as deletedCount
     `;
 
-    const result = await database.runQuery(cypher, { treeId, personId });
+    const result = await database.runQuery(cypher, { treeId, userId });
     const deletedCount = result.records[0].get('deletedCount').toNumber();
     
     if (deletedCount === 0) {
-      throw new AppError('Person not found in tree', 404, 'PERSON_NOT_IN_TREE');
+      throw new AppError('User not found in tree', 404, 'USER_NOT_IN_TREE');
     }
 
     return { deletedCount };
   }
 
-  static async getTreePeople(treeId, filters = {}) {
+  static async getTreeUsers(treeId, filters = {}) {
     let cypher = `
-      MATCH (person:Person)-[r:BELONGS_TO]->(ft:FamilyTree {id: $treeId})
+      MATCH (user:User)-[r:BELONGS_TO]->(ft:FamilyTree {id: $treeId})
     `;
 
     const params = { treeId };
@@ -380,12 +380,12 @@ class FamilyTree {
       params.branch = filters.branch;
     }
     if (filters.gender) {
-      conditions.push('person.gender = $gender');
+      conditions.push('user.gender = $gender');
       params.gender = filters.gender;
     }
     if (filters.isDeceased !== undefined) {
-      conditions.push('person.isDeceased = $isDeceased');
-      params.isDeceased = filters.isDeceased;
+      conditions.push('user.isAlive = $isAlive');
+      params.isAlive = !filters.isDeceased;
     }
 
     if (conditions.length > 0) {
@@ -393,18 +393,18 @@ class FamilyTree {
     }
 
     cypher += `
-      RETURN person, r
-      ORDER BY r.generation, person.firstName, person.lastName
+      RETURN user, r
+      ORDER BY r.generation, user.firstName, user.lastName
     `;
 
     const result = await database.runQuery(cypher, params);
     
     return result.records.map(record => {
-      const person = database.constructor.extractNodeProperties(record, 'person');
+      const user = database.constructor.extractNodeProperties(record, 'user');
       const relationship = database.constructor.extractRelationshipProperties(record, 'r');
       
       return {
-        person,
+        user,
         treeRelationship: relationship
       };
     });

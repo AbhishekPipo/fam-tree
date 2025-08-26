@@ -14,7 +14,7 @@ router.use(authenticateToken);
  * @swagger
  * /api/search:
  *   get:
- *     summary: Advanced search across persons, events, and family trees
+ *     summary: Advanced search across users, events, and family trees
  *     tags: [Search]
  *     security:
  *       - bearerAuth: []
@@ -31,7 +31,7 @@ router.use(authenticateToken);
  *         name: type
  *         schema:
  *           type: string
- *           enum: [person, event, tree, all]
+ *           enum: [user, event, tree, all]
  *           default: all
  *         description: Type of entities to search
  *       - in: query
@@ -140,7 +140,7 @@ router.get('/suggestions', searchLimiter, async (req, res, next) => {
  * @swagger
  * /api/search/relationship-path:
  *   get:
- *     summary: Find relationship path between two persons
+ *     summary: Find relationship path between two users
  *     tags: [Search]
  *     security:
  *       - bearerAuth: []
@@ -150,13 +150,13 @@ router.get('/suggestions', searchLimiter, async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: From person ID
+ *         description: From user ID
  *       - in: query
  *         name: to
  *         required: true
  *         schema:
  *           type: string
- *         description: To person ID
+ *         description: To user ID
  *       - in: query
  *         name: maxDepth
  *         schema:
@@ -174,7 +174,7 @@ router.get('/relationship-path', async (req, res, next) => {
     const { from, to, maxDepth = 6 } = req.query;
     
     if (!from || !to) {
-      throw new AppError('Both from and to person IDs are required', 400, 'MISSING_PERSON_IDS');
+      throw new AppError('Both from and to user IDs are required', 400, 'MISSING_USER_IDS');
     }
     
     const paths = await SearchService.findRelationshipPath(from, to, parseInt(maxDepth));
@@ -182,8 +182,8 @@ router.get('/relationship-path', async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        fromPersonId: from,
-        toPersonId: to,
+        fromUserId: from,
+        toUserId: to,
         maxDepth: parseInt(maxDepth),
         paths
       }
@@ -195,19 +195,19 @@ router.get('/relationship-path', async (req, res, next) => {
 
 /**
  * @swagger
- * /api/search/relationship-suggestions/{personId}:
+ * /api/search/relationship-suggestions/{userId}:
  *   get:
- *     summary: Get relationship suggestions for a person
+ *     summary: Get relationship suggestions for a user
  *     tags: [Search]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: personId
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: Person ID
+ *         description: User ID
  *       - in: query
  *         name: limit
  *         schema:
@@ -220,26 +220,24 @@ router.get('/relationship-path', async (req, res, next) => {
  *       200:
  *         description: Relationship suggestions
  */
-router.get('/relationship-suggestions/:personId', async (req, res, next) => {
+router.get('/relationship-suggestions/:userId', async (req, res, next) => {
   try {
-    const { personId } = req.params;
+    const { userId } = req.params;
     const { limit = 10 } = req.query;
     
-    const suggestions = await SearchService.getRelationshipSuggestions(personId, parseInt(limit));
-    
+    const suggestions = await SearchService.getRelationshipSuggestions(userId, parseInt(limit, 10));
+
     res.json({
       success: true,
       data: {
-        personId,
+        userId,
         suggestions
       }
     });
   } catch (error) {
     next(error);
   }
-});
-
-/**
+});/**
  * @swagger
  * /api/search/analyze-tree/{treeId}:
  *   get:
