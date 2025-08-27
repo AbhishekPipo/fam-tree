@@ -1,0 +1,296 @@
+openapi: 3.1.0
+info:
+  title: Family Tree API
+  version: 1.0.0
+  description: A RESTful API for managing family tree data using JanusGraph database
+  contact:
+    name: API Support
+    url: https://github.com/AbhishekPipo/fam-tree
+    email: support@famtree.com
+  license:
+    name: ISC
+    url: https://opensource.org/licenses/ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /:
+    get:
+      tags:
+        - System
+      summary: Get API information
+      description: Returns basic information about the Family Tree API including available endpoints
+      responses:
+        '200':
+          description: API information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiInfo'
+
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Returns the current status of the API server
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account in the family tree system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request - missing required fields or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticates a user and returns a JWT token. Optionally supports OTP verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - invalid credentials or OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/profile:
+    get:
+      tags:
+        - Authentication
+      summary: Get user profile
+      description: Retrieves the authenticated user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier from JanusGraph
+          example: '4096'
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        name:
+          type: string
+          description: Full name of the user
+          example: John Doe
+        phone:
+          type: string
+          description: Phone number (optional)
+          example: '+1234567890'
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: '2024-01-01T00:00:00.000Z'
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          minLength: 6
+          description: User password
+          example: password123
+        name:
+          type: string
+          description: Full name of the user
+          example: John Doe
+        phone:
+          type: string
+          description: Phone number (optional)
+          example: '+1234567890'
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          description: User password
+          example: password123
+        otp:
+          type: string
+          description: Optional OTP for additional security
+          example: '123456'
+
+    AuthResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: Login successful
+        token:
+          type: string
+          description: JWT authentication token
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        user:
+          $ref: '#/components/schemas/User'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid email or password
+        message:
+          type: string
+          description: Additional error details
+          example: The provided credentials are incorrect
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Server status
+          example: OK
+        message:
+          type: string
+          description: Status message
+          example: Server is running
+        timestamp:
+          type: string
+          format: date-time
+          description: Current timestamp
+          example: '2024-01-01T00:00:00.000Z'
+
+    ApiInfo:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Family Tree API Server
+        version:
+          type: string
+          example: 1.0.0
+        endpoints:
+          type: object
+          additionalProperties:
+            type: string
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: System
+    description: System health and information endpoints

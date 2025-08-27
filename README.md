@@ -33,6 +33,29 @@ A simple Node.js API for user registration and login with JanusGraph database in
    npm start
    ```
 
+## API Documentation
+
+The API includes comprehensive Swagger documentation that provides:
+- Interactive API explorer
+- Detailed endpoint descriptions
+- Request/response schemas
+- Authentication requirements
+- Example requests and responses
+
+### Access API Documentation
+
+Once the server is running, visit:
+- **Swagger UI**: http://localhost:3000/api-docs
+- **API Info**: http://localhost:3000/
+- **Health Check**: http://localhost:3000/health
+
+The Swagger documentation includes:
+- Complete API reference
+- Interactive request testing
+- Schema definitions
+- Authentication examples
+- Error response documentation
+
 ## API Endpoints
 
 ### POST /api/auth/register

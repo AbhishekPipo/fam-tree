@@ -9,6 +9,7 @@
     "start:janusgraph": "node scripts/start-app.js janusgraph",
     "dev": "node scripts/start-app.js",
     "dev:node": "nodemon server.js",
+    "docs": "echo 'API Documentation available at http://localhost:3000/api-docs'",
     "janusgraph:start": "./scripts/start-janusgraph.sh start",
     "janusgraph:stop": "./scripts/start-janusgraph.sh stop",
     "janusgraph:restart": "./scripts/start-janusgraph.sh restart",
@@ -34,6 +35,8 @@
     "express": "^5.1.0",
     "gremlin": "^3.6.0",
     "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "ws": "^8.18.3"
   }
 }
