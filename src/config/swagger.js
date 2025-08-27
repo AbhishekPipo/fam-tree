@@ -38,21 +38,36 @@ const options = {
               description: 'Unique user identifier from JanusGraph',
               example: '4096'
             },
+            phoneNumber: {
+              type: 'string',
+              description: 'User phone number (primary identifier)',
+              example: '+1234567890'
+            },
+            firstName: {
+              type: 'string',
+              description: 'User first name',
+              example: 'John'
+            },
+            lastName: {
+              type: 'string',
+              description: 'User last name',
+              example: 'Doe'
+            },
             email: {
               type: 'string',
               format: 'email',
-              description: 'User email address',
-              example: 'user@example.com'
+              description: 'User email address (optional)',
+              example: 'john.doe@example.com'
             },
-            name: {
-              type: 'string',
-              description: 'Full name of the user',
-              example: 'John Doe'
+            isVerified: {
+              type: 'boolean',
+              description: 'Whether phone number is verified',
+              example: true
             },
-            phone: {
-              type: 'string',
-              description: 'Phone number (optional)',
-              example: '+1234567890'
+            isActive: {
+              type: 'boolean',
+              description: 'Whether user account is active',
+              example: true
             },
             createdAt: {
               type: 'string',
@@ -62,53 +77,75 @@ const options = {
             }
           }
         },
+        PhoneOTPRequest: {
+          type: 'object',
+          required: ['phoneNumber'],
+          properties: {
+            phoneNumber: {
+              type: 'string',
+              pattern: '^\\+?[1-9]\\d{1,14}$',
+              description: 'Phone number in international format',
+              example: '+1234567890'
+            }
+          }
+        },
+        OTPVerifyRequest: {
+          type: 'object',
+          required: ['phoneNumber', 'otp'],
+          properties: {
+            phoneNumber: {
+              type: 'string',
+              pattern: '^\\+?[1-9]\\d{1,14}$',
+              description: 'Phone number used for OTP',
+              example: '+1234567890'
+            },
+            otp: {
+              type: 'string',
+              pattern: '^\\d{6}$',
+              description: '6-digit OTP code',
+              example: '123456'
+            }
+          }
+        },
         RegisterRequest: {
           type: 'object',
-          required: ['email', 'password', 'name'],
+          required: ['tempToken', 'firstName', 'lastName'],
           properties: {
+            tempToken: {
+              type: 'string',
+              description: 'Temporary token from OTP verification'
+            },
+            firstName: {
+              type: 'string',
+              minLength: 1,
+              maxLength: 50,
+              description: 'User first name',
+              example: 'John'
+            },
+            lastName: {
+              type: 'string',
+              minLength: 1,
+              maxLength: 50,
+              description: 'User last name',
+              example: 'Doe'
+            },
             email: {
               type: 'string',
               format: 'email',
-              description: 'User email address',
-              example: 'user@example.com'
-            },
-            password: {
-              type: 'string',
-              minLength: 6,
-              description: 'User password',
-              example: 'password123'
-            },
-            name: {
-              type: 'string',
-              description: 'Full name of the user',
-              example: 'John Doe'
-            },
-            phone: {
-              type: 'string',
-              description: 'Phone number (optional)',
-              example: '+1234567890'
+              description: 'Optional email address',
+              example: 'john.doe@example.com'
             }
           }
         },
         LoginRequest: {
           type: 'object',
-          required: ['email', 'password'],
+          required: ['phoneNumber'],
           properties: {
-            email: {
+            phoneNumber: {
               type: 'string',
-              format: 'email',
-              description: 'User email address',
-              example: 'user@example.com'
-            },
-            password: {
-              type: 'string',
-              description: 'User password',
-              example: 'password123'
-            },
-            otp: {
-              type: 'string',
-              description: 'Optional OTP for additional security',
-              example: '123456'
+              pattern: '^\\+?[1-9]\\d{1,14}$',
+              description: 'Registered phone number',
+              example: '+1234567890'
             }
           }
         },
