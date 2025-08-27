@@ -33,6 +33,35 @@ A simple Node.js API for user registration and login with JanusGraph database in
    npm start
    ```
 
+## Project Structure
+
+```
+fam-tree/
+├── config/                 # Database configuration
+│   └── database.js
+├── docs/                   # API documentation
+│   ├── README.md
+│   ├── api-examples.md
+│   ├── openapi.yaml
+│   └── Family-Tree-API.postman_collection.json
+├── scripts/               # Startup scripts
+│   ├── start-app.js
+│   └── start-janusgraph.sh
+├── src/                   # Source code
+│   ├── config/            # Application configuration
+│   │   └── swagger.js
+│   ├── middleware/        # Express middleware
+│   │   └── auth.js
+│   ├── routes/           # API routes
+│   │   └── auth.js
+│   ├── controllers/      # Route controllers (future)
+│   ├── models/          # Data models (future)
+│   └── utils/           # Utility functions (future)
+├── server.js            # Main server file
+├── package.json
+└── README.md
+```
+
 ## API Documentation
 
 The API includes comprehensive Swagger documentation that provides:

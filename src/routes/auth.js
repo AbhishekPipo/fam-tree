@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const janusGraph = require('../config/database');
+const janusGraph = require('../../config/database');
 const router = express.Router();
 
 // Helper function to generate JWT token

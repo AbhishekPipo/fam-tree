@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const janusGraph = require('./config/database');
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./src/routes/auth');
 const { specs, swaggerUi } = require('./src/config/swagger');
 require('dotenv').config();
 

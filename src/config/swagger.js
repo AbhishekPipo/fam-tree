@@ -199,7 +199,7 @@ const options = {
     ]
   },
   apis: [
-    './routes/*.js',
+    './src/routes/*.js',
     './server.js'
   ]
 };
