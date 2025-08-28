@@ -1,7 +1,7 @@
 {
   "name": "fam-tree",
   "version": "1.0.0",
-  "description": "",
+  "description": "A comprehensive, production-ready genealogy platform that leverages JanusGraph database to model complex family relationships with event management, social feeds, and media capabilities.",
   "main": "index.js",
   "scripts": {
     "start": "node scripts/start-app.js",
@@ -10,6 +10,8 @@
     "dev": "node scripts/start-app.js",
     "dev:node": "nodemon server.js",
     "docs": "echo 'API Documentation available at http://localhost:3000/api-docs'",
+    "seed": "node scripts/seed-database.js",
+    "setup": "npm run janusgraph:start && sleep 10 && npm run seed",
     "janusgraph:start": "./scripts/start-janusgraph.sh start",
     "janusgraph:stop": "./scripts/start-janusgraph.sh stop",
     "janusgraph:restart": "./scripts/start-janusgraph.sh restart",
@@ -32,7 +34,7 @@
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^4.19.2",
     "gremlin": "^3.6.0",
     "jsonwebtoken": "^9.0.2",
     "swagger-jsdoc": "^6.2.8",

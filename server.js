@@ -2,6 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const janusGraph = require('./config/database');
 const authRoutes = require('./src/routes/auth');
+const familyRoutes = require('./src/routes/family');
+const eventRoutes = require('./src/routes/events');
+const postRoutes = require('./src/routes/posts');
+const mediaRoutes = require('./src/routes/media');
 const { specs, swaggerUi } = require('./src/config/swagger');
 require('dotenv').config();
 
@@ -21,6 +25,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/family', familyRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Health check endpoint
 /**
@@ -70,6 +78,14 @@ app.get('/', (req, res) => {
             'POST /api/auth/register': 'Register new user',
             'POST /api/auth/login': 'Login user (with optional OTP)',
             'GET /api/auth/profile': 'Get user profile (requires token)',
+            'GET /api/family/tree': 'Get family tree',
+            'POST /api/family/member': 'Add family member',
+            'GET /api/events': 'Get events',
+            'POST /api/events': 'Create event',
+            'GET /api/posts/feed': 'Get social feed',
+            'POST /api/posts': 'Create post',
+            'GET /api/media': 'Get media',
+            'POST /api/media': 'Upload media',
             'GET /health': 'Health check',
             'GET /api-docs': 'API Documentation (Swagger)'
         }

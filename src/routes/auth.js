@@ -182,7 +182,7 @@ router.post('/verify-otp', async (req, res) => {
 
         // Check if user exists
         const existingUser = await g.V()
-            .has('User', 'phoneNumber', phoneNumber)
+            .has('User', 'primaryPhone', phoneNumber)
             .toList();
 
         if (existingUser.length > 0) {
@@ -203,10 +203,10 @@ router.post('/verify-otp', async (req, res) => {
                 token,
                 user: {
                     id: userId,
-                    phoneNumber: userData.phoneNumber[0],
+                    phoneNumber: userData.primaryPhone ? userData.primaryPhone[0] : phoneNumber,
                     firstName: userData.firstName ? userData.firstName[0] : '',
                     lastName: userData.lastName ? userData.lastName[0] : '',
-                    email: userData.email ? userData.email[0] : ''
+                    email: userData.primaryEmail ? userData.primaryEmail[0] : ''
                 }
             });
         } else {
@@ -325,7 +325,7 @@ router.post('/register', async (req, res) => {
 
         // Check if user already exists
         const existingUser = await g.V()
-            .has('User', 'phoneNumber', phoneNumber)
+            .has('User', 'primaryPhone', phoneNumber)
             .toList();
 
         if (existingUser.length > 0) {
@@ -336,10 +336,10 @@ router.post('/register', async (req, res) => {
 
         // Create user vertex in JanusGraph
         const user = await g.addV('User')
-            .property('phoneNumber', phoneNumber)
+            .property('primaryPhone', phoneNumber)
             .property('firstName', firstName)
             .property('lastName', lastName)
-            .property('email', email || '')
+            .property('primaryEmail', email || '')
             .property('isVerified', true)
             .property('isActive', true)
             .property('createdAt', new Date().toISOString())
@@ -438,7 +438,7 @@ router.post('/login', async (req, res) => {
 
         // Check if user exists
         const existingUser = await g.V()
-            .has('User', 'phoneNumber', phoneNumber)
+            .has('User', 'primaryPhone', phoneNumber)
             .toList();
 
         if (existingUser.length === 0) {
