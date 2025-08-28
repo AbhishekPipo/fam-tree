@@ -4,10 +4,11 @@
   "description": "A comprehensive, production-ready genealogy platform that leverages JanusGraph database to model complex family relationships with event management, social feeds, and media capabilities.",
   "main": "index.js",
   "scripts": {
-    "start": "node scripts/start-app.js",
+    "start": "nodemon server.js",
+    "start:prod": "node server.js",
     "start:node": "node server.js",
-    "start:janusgraph": "node scripts/start-app.js janusgraph",
-    "dev": "node scripts/start-app.js",
+    "start:janusgraph": "nodemon scripts/start-app.js janusgraph",
+    "dev": "nodemon scripts/start-app.js",
     "dev:node": "nodemon server.js",
     "docs": "echo 'API Documentation available at http://localhost:3000/api-docs'",
     "seed": "node scripts/seed-database.js",
@@ -40,5 +41,8 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

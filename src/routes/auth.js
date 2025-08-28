@@ -4,9 +4,43 @@ const jwt = require('jsonwebtoken');
 const janusGraph = require('../../config/database');
 const router = express.Router();
 
-// Helper function to generate JWT token
-const generateToken = (userId) => {
-    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+// Helper function to generate random OTP
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Helper function to generate JWT access token
+const generateAccessToken = (userId, role = 'user') => {
+    return jwt.sign(
+        { 
+            userId, 
+            role,
+            type: 'access'
+        }, 
+        process.env.JWT_SECRET, 
+        { expiresIn: process.env.JWT_ACCESS_EXPIRY || '24h' }
+    );
+};
+
+// Helper function to generate JWT refresh token
+const generateRefreshToken = (userId, role = 'user') => {
+    return jwt.sign(
+        { 
+            userId, 
+            role,
+            type: 'refresh'
+        }, 
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, 
+        { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    );
+};
+
+// Helper function to generate both tokens
+const generateTokenPair = (userId, role = 'user') => {
+    return {
+        accessToken: generateAccessToken(userId, role),
+        refreshToken: generateRefreshToken(userId, role)
+    };
 };
 
 // Helper function to validate phone number (basic validation)
@@ -78,14 +112,17 @@ router.post('/send-otp', async (req, res) => {
             });
         }
 
-        // For now, return static OTP
-        const staticOTP = process.env.STATIC_OTP || '123456';
-
+        // Generate random OTP (6 digits)
+        const otp = generateOTP();
+        
+        // TODO: Integrate with MSG91 SMS service
+        // For now, return the OTP in response (development only)
+        
         res.json({
             success: true,
             message: 'OTP sent successfully',
             // TODO: Remove this in production - only for development
-            otp: staticOTP,
+            otp: process.env.NODE_ENV === 'development' ? otp : undefined,
             expiresIn: 300 // 5 minutes
         });
 
@@ -194,19 +231,25 @@ router.post('/verify-otp', async (req, res) => {
             const userProps = await g.V(userId).valueMap().next();
             const userData = userProps.value;
 
-            const token = generateToken(userId);
+            // Get user role (default to 'user' if not set)
+            const userRole = userData.role ? userData.role[0] : 'user';
+
+            // Generate token pair with role
+            const tokens = generateTokenPair(userId, userRole);
 
             res.json({
                 success: true,
                 action: 'login',
                 message: 'Login successful',
-                token,
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
                 user: {
                     id: userId,
                     phoneNumber: userData.primaryPhone ? userData.primaryPhone[0] : phoneNumber,
                     firstName: userData.firstName ? userData.firstName[0] : '',
                     lastName: userData.lastName ? userData.lastName[0] : '',
-                    email: userData.primaryEmail ? userData.primaryEmail[0] : ''
+                    email: userData.primaryEmail ? userData.primaryEmail[0] : '',
+                    role: userRole
                 }
             });
         } else {
@@ -334,12 +377,14 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Create user vertex in JanusGraph
+        // Create user vertex in JanusGraph with default role
+        const defaultRole = 'user';
         const user = await g.addV('User')
             .property('primaryPhone', phoneNumber)
             .property('firstName', firstName)
             .property('lastName', lastName)
             .property('primaryEmail', email || '')
+            .property('role', defaultRole)
             .property('isVerified', true)
             .property('isActive', true)
             .property('createdAt', new Date().toISOString())
@@ -348,19 +393,21 @@ router.post('/register', async (req, res) => {
 
         const userId = user.value.id;
 
-        // Generate JWT token
-        const token = generateToken(userId);
+        // Generate token pair with role
+        const tokens = generateTokenPair(userId, defaultRole);
 
         res.status(201).json({
             success: true,
             message: 'User registered successfully',
-            token,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
             user: {
                 id: userId,
                 phoneNumber,
                 firstName,
                 lastName,
-                email: email || ''
+                email: email || '',
+                role: defaultRole
             }
         });
 
@@ -531,10 +578,11 @@ router.get('/profile', async (req, res) => {
             success: true,
             user: {
                 id: userId,
-                phoneNumber: userData.phoneNumber ? userData.phoneNumber[0] : '',
+                phoneNumber: userData.primaryPhone ? userData.primaryPhone[0] : '',
                 firstName: userData.firstName ? userData.firstName[0] : '',
                 lastName: userData.lastName ? userData.lastName[0] : '',
-                email: userData.email ? userData.email[0] : '',
+                email: userData.primaryEmail ? userData.primaryEmail[0] : '',
+                role: userData.role ? userData.role[0] : 'user',
                 isVerified: userData.isVerified ? userData.isVerified[0] : false,
                 isActive: userData.isActive ? userData.isActive[0] : false,
                 createdAt: userData.createdAt ? userData.createdAt[0] : ''
@@ -543,6 +591,334 @@ router.get('/profile', async (req, res) => {
 
     } catch (error) {
         console.error('Profile error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Refresh token endpoint
+/**
+ * @swagger
+ * /api/auth/refresh-token:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Refresh access token
+ *     description: Generate new access token using refresh token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Valid refresh token
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 accessToken:
+ *                   type: string
+ *                   description: New access token
+ *                 refreshToken:
+ *                   type: string
+ *                   description: New refresh token
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/refresh-token', async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                error: 'Refresh token required',
+                message: 'Please provide a valid refresh token'
+            });
+        }
+
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
+        
+        // Check if token is refresh token
+        if (decoded.type !== 'refresh') {
+            return res.status(401).json({
+                error: 'Invalid token type',
+                message: 'Please provide a refresh token'
+            });
+        }
+
+        const userId = decoded.userId;
+        const userRole = decoded.role || 'user';
+
+        // Verify user still exists and is active
+        const g = janusGraph.getTraversal();
+        const userProps = await g.V(userId).valueMap().next();
+        
+        if (!userProps.value) {
+            return res.status(401).json({
+                error: 'User not found',
+                message: 'User account no longer exists'
+            });
+        }
+
+        const userData = userProps.value;
+        const isActive = userData.isActive ? userData.isActive[0] : false;
+
+        if (!isActive) {
+            return res.status(401).json({
+                error: 'Account deactivated',
+                message: 'User account has been deactivated'
+            });
+        }
+
+        // Generate new token pair
+        const tokens = generateTokenPair(userId, userRole);
+
+        res.json({
+            success: true,
+            message: 'Token refreshed successfully',
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken
+        });
+
+    } catch (error) {
+        console.error('Refresh token error:', error);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                error: 'Refresh token expired',
+                message: 'Please log in again'
+            });
+        } else if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                error: 'Invalid refresh token',
+                message: 'Please log in again'
+            });
+        } else {
+            return res.status(500).json({
+                error: 'Token refresh failed',
+                message: 'Unable to refresh token'
+            });
+        }
+    }
+});
+
+// Get available roles endpoint (admin only)
+/**
+ * @swagger
+ * /api/auth/roles:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Get available roles
+ *     description: Retrieves list of available user roles (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Roles retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 roles:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *       403:
+ *         description: Insufficient permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/roles', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userRole = decoded.role || 'user';
+
+        // Only admin and super_admin can view roles
+        if (!['admin', 'super_admin'].includes(userRole)) {
+            return res.status(403).json({
+                error: 'Insufficient permissions',
+                message: 'Only administrators can view available roles'
+            });
+        }
+
+        const { getAvailableRoles } = require('../config/permissions');
+        const roles = getAvailableRoles();
+
+        res.json({
+            success: true,
+            roles
+        });
+
+    } catch (error) {
+        console.error('Get roles error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update user role endpoint (admin only)
+/**
+ * @swagger
+ * /api/auth/update-role:
+ *   put:
+ *     tags: [Authentication]
+ *     summary: Update user role
+ *     description: Updates a user's role (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - newRole
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID of user to update
+ *               newRole:
+ *                 type: string
+ *                 description: New role to assign
+ *                 enum: [user, moderator, admin, super_admin]
+ *     responses:
+ *       200:
+ *         description: Role updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *       403:
+ *         description: Insufficient permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/update-role', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const adminRole = decoded.role || 'user';
+        const adminId = decoded.userId;
+
+        // Only admin and super_admin can update roles
+        if (!['admin', 'super_admin'].includes(adminRole)) {
+            return res.status(403).json({
+                error: 'Insufficient permissions',
+                message: 'Only administrators can update user roles'
+            });
+        }
+
+        const { userId, newRole } = req.body;
+
+        if (!userId || !newRole) {
+            return res.status(400).json({
+                error: 'Missing required fields',
+                message: 'userId and newRole are required'
+            });
+        }
+
+        // Validate role
+        const validRoles = ['user', 'moderator', 'admin', 'super_admin'];
+        if (!validRoles.includes(newRole)) {
+            return res.status(400).json({
+                error: 'Invalid role',
+                message: `Role must be one of: ${validRoles.join(', ')}`
+            });
+        }
+
+        // Super admin restrictions
+        if (newRole === 'super_admin' && adminRole !== 'super_admin') {
+            return res.status(403).json({
+                error: 'Insufficient permissions',
+                message: 'Only super administrators can assign super_admin role'
+            });
+        }
+
+        // Prevent self-demotion for super_admin
+        if (adminId === userId && adminRole === 'super_admin' && newRole !== 'super_admin') {
+            return res.status(400).json({
+                error: 'Cannot demote self',
+                message: 'Super administrators cannot demote themselves'
+            });
+        }
+
+        const g = janusGraph.getTraversal();
+
+        // Check if target user exists
+        const userProps = await g.V(userId).valueMap().next();
+        
+        if (!userProps.value) {
+            return res.status(404).json({
+                error: 'User not found',
+                message: 'Target user does not exist'
+            });
+        }
+
+        // Update user role
+        await g.V(userId)
+            .property('role', newRole)
+            .property('updatedAt', new Date().toISOString())
+            .next();
+
+        res.json({
+            success: true,
+            message: `User role updated to ${newRole} successfully`
+        });
+
+    } catch (error) {
+        console.error('Update role error:', error);
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: 'Invalid token' });
         }

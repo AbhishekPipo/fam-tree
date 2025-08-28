@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const FamilyController = require('../controllers/FamilyController');
 const { authenticateToken: auth } = require('../middleware/auth');
+const { canRead, canCreate, canUpdate, canDelete, requireRole } = require('../middleware/rbac');
 
 /**
  * @swagger
@@ -38,8 +39,8 @@ const { authenticateToken: auth } = require('../middleware/auth');
  *       404:
  *         description: User not found
  */
-router.get('/tree', auth, FamilyController.getFamilyTree);
-router.get('/tree/:userId', auth, FamilyController.getFamilyTree);
+router.get('/tree', canRead('family', 'tree'), FamilyController.getFamilyTree);
+router.get('/tree/:userId', canRead('family', 'tree'), FamilyController.getFamilyTree);
 
 /**
  * @swagger
@@ -73,7 +74,7 @@ router.get('/tree/:userId', auth, FamilyController.getFamilyTree);
  *       200:
  *         description: Family members retrieved successfully
  */
-router.get('/members', auth, FamilyController.getFamilyMembers);
+router.get('/members', canRead('family', 'members'), FamilyController.getFamilyMembers);
 
 /**
  * @swagger
@@ -116,7 +117,7 @@ router.get('/members', auth, FamilyController.getFamilyMembers);
  *       400:
  *         description: Invalid input data
  */
-router.post('/member', auth, FamilyController.addFamilyMember);
+router.post('/member', canCreate('family', 'members'), FamilyController.addFamilyMember);
 
 /**
  * @swagger
@@ -136,7 +137,7 @@ router.post('/member', auth, FamilyController.addFamilyMember);
  *       200:
  *         description: Family member updated successfully
  */
-router.put('/member/:id', auth, FamilyController.updateFamilyMember);
+router.put('/member/:id', canUpdate('family', 'members'), FamilyController.updateFamilyMember);
 
 /**
  * @swagger
@@ -360,6 +361,6 @@ router.get('/relationship-suggestions', auth, FamilyController.getRelationshipSu
  *       200:
  *         description: Bulk add completed
  */
-router.post('/bulk-add', auth, FamilyController.bulkAddMembers);
+router.post('/bulk-add', requireRole(['admin', 'super_admin']), FamilyController.bulkAddMembers);
 
 module.exports = router;
