@@ -10,6 +10,7 @@
     "start:janusgraph": "nodemon scripts/start-app.js janusgraph",
     "dev": "nodemon scripts/start-app.js",
     "dev:node": "nodemon server.js",
+    "dev:full": "npm run telemetry:start && npm run janusgraph:start && sleep 10 && npm start",
     "docs": "echo 'API Documentation available at http://localhost:3000/api-docs'",
     "seed": "node scripts/seed-database.js",
     "setup": "npm run janusgraph:start && sleep 10 && npm run seed",
@@ -18,7 +19,12 @@
     "janusgraph:restart": "./scripts/start-janusgraph.sh restart",
     "janusgraph:status": "./scripts/start-janusgraph.sh status",
     "janusgraph:logs": "./scripts/start-janusgraph.sh logs",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "telemetry:start": "docker-compose -f docker-compose.telemetry.yml up -d",
+    "telemetry:stop": "docker-compose -f docker-compose.telemetry.yml down",
+    "telemetry:logs": "docker-compose -f docker-compose.telemetry.yml logs -f",
+    "telemetry:restart": "npm run telemetry:stop && npm run telemetry:start",
+    "telemetry:test": "node scripts/test-telemetry.js",
+    "test": "npm run telemetry:test"
   },
   "repository": {
     "type": "git",
@@ -32,6 +38,15 @@
   },
   "homepage": "https://github.com/AbhishekPipo/fam-tree#readme",
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.62.1",
+    "@opentelemetry/exporter-jaeger": "^2.0.1",
+    "@opentelemetry/exporter-prometheus": "^0.203.0",
+    "@opentelemetry/instrumentation-express": "^0.52.0",
+    "@opentelemetry/instrumentation-fs": "^0.23.0",
+    "@opentelemetry/instrumentation-http": "^0.203.0",
+    "@opentelemetry/sdk-node": "^0.203.0",
+    "@opentelemetry/semantic-conventions": "^1.36.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -43,6 +58,7 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "axios": "^1.7.9",
     "nodemon": "^3.1.10"
   }
 }
