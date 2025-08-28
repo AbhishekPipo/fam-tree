@@ -165,3 +165,16 @@ dist/
 # Temporary files
 tmp/
 temp/
+# AI Assistant Configurations (Claude, Qodo, Zencoder, etc.)
+.claude/
+.qodo/
+.zencoder/
+.cursor/
+.copilot/
+.codeium/
+
+# Development Utilities
+get-user-ids.js
+debug-*.js
+test-*.js
+temp-*.js
