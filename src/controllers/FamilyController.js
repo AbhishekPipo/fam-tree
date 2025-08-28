@@ -5,10 +5,14 @@ class FamilyController {
     // Get family tree for a user
     static async getFamilyTree(req, res) {
         try {
-            const { userId } = req.params;
+            const userId = req.params.userId || req.query.userId;
             const { depth = 3 } = req.query;
             
-            const user = await User.findById(userId || req.user.id);
+            // Ensure the ID is treated as a string for consistency
+            // JWT contains 'userId', not 'id'
+            const finalUserId = String(userId || req.user.userId);
+            
+            const user = await User.findById(finalUserId);
             if (!user) {
                 return res.status(404).json({
                     success: false,

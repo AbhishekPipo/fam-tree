@@ -262,7 +262,17 @@ class User {
         const g = db.getTraversal();
         
         try {
-            const users = await g.V().has('User', 'id', id).elementMap().toList();
+            let users = [];
+            
+            // First try to find by vertex ID (numeric)
+            if (!isNaN(id)) {
+                users = await g.V(parseInt(id)).hasLabel('User').elementMap().toList();
+            }
+            
+            // If not found, try to find by property 'id' (UUID string)
+            if (users.length === 0) {
+                users = await g.V().has('User', 'id', id).elementMap().toList();
+            }
             
             if (users.length === 0) {
                 return null;
@@ -357,7 +367,8 @@ class User {
         
         // Convert Map to object and parse JSON fields
         for (const [key, value] of data.entries()) {
-            if (key === gremlin.process.T.label || key === gremlin.process.T.id) {
+            // Skip T.label and T.id enum values
+            if (typeof key === 'object' && key.elementName) {
                 continue;
             }
             
@@ -428,7 +439,15 @@ class User {
         const g = db.getTraversal();
         
         try {
-            const tree = await g.V().has('User', 'id', this.id)
+            // First find the user vertex by ID (either vertex ID or property ID)
+            let userVertex;
+            if (!isNaN(this.id)) {
+                userVertex = g.V(parseInt(this.id)).hasLabel('User');
+            } else {
+                userVertex = g.V().has('User', 'id', this.id);
+            }
+            
+            const tree = await userVertex
                 .repeat(__.both('FAMILY_RELATIONSHIP'))
                 .times(depth)
                 .dedup()
