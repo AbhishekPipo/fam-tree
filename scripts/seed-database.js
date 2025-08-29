@@ -3,7 +3,6 @@ const User = require('../src/models/User');
 const { Relationship } = require('../src/models/Relationship');
 const { Event } = require('../src/models/Event');
 const { Post } = require('../src/models/Post');
-const { Media } = require('../src/models/Media');
 const bcrypt = require('bcryptjs');
 
 async function seedDatabase() {
@@ -692,7 +691,7 @@ This recipe has brought our family together for decades! 🍛`,
 
     console.log(`✅ Created ${posts.length} posts`);
 
-    // Add some likes and comments to posts
+    // Add some likes to posts
     console.log('👍 Adding interactions...');
     await memoryPost.addLike(ramesh.id);
     await memoryPost.addLike(mallika.id);
@@ -711,79 +710,16 @@ This recipe has brought our family together for decades! 🍛`,
     await recipePost.addLike(mallika.id);
     await recipePost.addLike(priya.id);
 
-    // Add some comments
-    await memoryPost.addComment({
-      content: 'What a beautiful photo! You both look so happy and young. ❤️',
-      authorId: mallika.id
-    });
+    console.log('✅ Added likes');
 
-    await announcementPost.addComment({
-      content: 'Thanks Papa! Couldn\'t have done it without your support! 📚',
-      authorId: arjun.id
-    });
-
-    await familyPost.addComment({
-      content: 'These family dinners are the highlight of my week! Love you all! 💕',
-      authorId: simran.id
-    });
-
-    await recipePost.addComment({
-      content: 'I need to learn how to make this! Can you teach me next time I visit? 👩‍🍳',
-      authorId: priya.id
-    });
-
-    console.log('✅ Added likes and comments');
-
-    // Create sample media
-    console.log('📸 Creating sample media...');
-
-    const weddingPhoto = new Media({
-      filename: 'wedding-1945.jpg',
-      originalName: 'harilal-savitri-wedding.jpg',
-      mimeType: 'image/jpeg',
-      mediaType: 'image',
-      size: 2500000,
-      url: '/uploads/wedding-1945.jpg',
-      title: 'Harilal & Savitri Wedding Photo',
-      description: 'Beautiful wedding photo from 1945',
-      tags: ['wedding', 'vintage', '1940s', 'black and white'],
-      visibility: 'family',
-      uploadedBy: harilal.id,
-      dateTaken: '1945-05-20T14:30:00Z',
-      peopleTagged: [harilal.id, savitri.id],
-      eventsLinked: [weddingEvent.id],
-      historicalPeriod: '1940s',
-      decade: '1940s'
-    });
-    await weddingPhoto.save();
-
-    const familyDinnerPhoto = new Media({
-      filename: 'family-dinner-2024.jpg',
-      originalName: 'patel-family-dinner.jpg',
-      mimeType: 'image/jpeg',
-      mediaType: 'image',
-      size: 4200000,
-      url: '/uploads/family-dinner-2024.jpg',
-      title: 'Patel Family Dinner 2024',
-      description: 'Four generations enjoying dinner together',
-      tags: ['family', 'dinner', 'festival', 'togetherness', 'gujarati'],
-      visibility: 'family',
-      uploadedBy: mallika.id,
-      dateTaken: '2024-01-15T18:00:00Z',
-      peopleTagged: [harilal.id, savitri.id, ramesh.id, mallika.id, prashanth.id, anjali.id, arjun.id, simran.id]
-    });
-    await familyDinnerPhoto.save();
-
-    console.log('✅ Created sample media');
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`👥 Users: ${users.length} (Patel Family - 4 generations)`);
-    console.log(`💑 Relationships: 14 (marriages, parent-child, siblings)`);
+    console.log(`💑 Relationships: 21 (marriages, parent-child, siblings)`);
     console.log(`📅 Events: ${events.length}`);
     console.log(`📱 Posts: ${posts.length}`);
-    console.log(`📸 Media: 2`);
-    console.log(`👍 Interactions: Multiple likes and comments`);
+    console.log(`👍 Interactions: Multiple likes`);
 
     console.log('\n🔐 Login Credentials (Patel Family):');
     console.log('Email: harilal.patel@email.com | Password: password123 | Phone: +91-9876543210');

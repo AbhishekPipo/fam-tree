@@ -1,5 +1,4 @@
 const { Post, POST_TYPES, VISIBILITY_LEVELS } = require('../models/Post');
-const Comment = require('../models/Comment');
 const User = require('../models/User');
 
 class PostController {
@@ -29,9 +28,6 @@ class PostController {
                         profilePicture: author.profilePicture
                     } : null;
 
-                    // Get recent comments
-                    const comments = await Comment.findByPost(post.id, false);
-                    postData.recentComments = comments.slice(0, 3).map(comment => comment.toJSON());
 
                     return postData;
                 })
@@ -89,7 +85,6 @@ class PostController {
     static async getPostById(req, res) {
         try {
             const { id } = req.params;
-            const { includeComments = true } = req.query;
 
             const post = await Post.findById(id);
             if (!post) {
@@ -111,10 +106,6 @@ class PostController {
                 profilePicture: author.profilePicture
             } : null;
 
-            // Include comments if requested
-            if (includeComments === 'true' || includeComments === true) {
-                postData.comments = await post.getComments();
-            }
 
             // Include likes
             postData.likedBy = await post.getLikes();
@@ -288,80 +279,6 @@ class PostController {
             });
         } catch (error) {
             console.error('Toggle like error:', error);
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
-
-    // Add comment to post
-    static async addComment(req, res) {
-        try {
-            const { id } = req.params;
-            const { content, parentCommentId } = req.body;
-
-            const post = await Post.findById(id);
-            if (!post) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Post not found'
-                });
-            }
-
-            const commentData = {
-                content,
-                authorId: req.user.id,
-                postId: id,
-                parentCommentId
-            };
-
-            const comment = await post.addComment(commentData);
-
-            // Get author info for response
-            const author = await User.findById(req.user.id);
-            const responseData = comment.toJSON();
-            responseData.author = author ? {
-                id: author.id,
-                firstName: author.firstName,
-                lastName: author.lastName,
-                profilePicture: author.profilePicture
-            } : null;
-
-            res.status(201).json({
-                success: true,
-                message: 'Comment added successfully',
-                data: responseData
-            });
-        } catch (error) {
-            console.error('Add comment error:', error);
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
-
-    // Delete comment
-    static async deleteComment(req, res) {
-        try {
-            const { commentId } = req.params;
-            const userId = req.user.id;
-
-            const success = await Comment.delete(commentId, userId);
-            if (!success) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Comment not found or not authorized'
-                });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: 'Comment deleted successfully'
-            });
-        } catch (error) {
-            console.error('Delete comment error:', error);
             res.status(400).json({
                 success: false,
                 message: error.message

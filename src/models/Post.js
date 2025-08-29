@@ -12,39 +12,22 @@ const POST_TYPES = {
         maxLength: 5000,
         allowsMedia: false
     },
-    'photo': {
-        category: 'media',
-        description: 'Photo post',
-        maxLength: 2000,
-        allowsMedia: true,
-        requiredMedia: true
-    },
-    'video': {
-        category: 'media',
-        description: 'Video post',
-        maxLength: 2000,
-        allowsMedia: true,
-        requiredMedia: true
-    },
     'memory': {
         category: 'special',
         description: 'Family memory or story',
         maxLength: 10000,
-        allowsMedia: true,
         isMemory: true
     },
     'announcement': {
         category: 'special',
         description: 'Family announcement',
         maxLength: 3000,
-        allowsMedia: true,
         isAnnouncement: true
     },
     'emergency': {
         category: 'urgent',
         description: 'Emergency alert',
         maxLength: 1000,
-        allowsMedia: true,
         isEmergency: true,
         priority: 'high'
     },
@@ -52,28 +35,24 @@ const POST_TYPES = {
         category: 'special',
         description: 'Life milestone',
         maxLength: 3000,
-        allowsMedia: true,
         isMilestone: true
     },
     'tribute': {
         category: 'special',
         description: 'Tribute or memorial',
         maxLength: 10000,
-        allowsMedia: true,
         isTribute: true
     },
     'recipe': {
         category: 'content',
         description: 'Family recipe',
         maxLength: 5000,
-        allowsMedia: true,
         isRecipe: true
     },
     'story': {
         category: 'content',
         description: 'Family story',
         maxLength: 15000,
-        allowsMedia: true,
         isStory: true
     }
 };
@@ -110,10 +89,6 @@ class Post {
         this.type = data.type || 'text';
         this.subtype = data.subtype || null;
         
-        // Media attachments
-        this.media = data.media || [];
-        this.attachments = data.attachments || [];
-        this.mediaCount = data.mediaCount || 0;
         
         // Author and audience
         this.authorId = data.authorId;
@@ -122,10 +97,6 @@ class Post {
         this.excludeAudience = data.excludeAudience || [];
         
         // Interaction counters
-        this.likes = data.likes || [];
-        this.likeCount = data.likeCount || 0;
-        this.comments = data.comments || [];
-        this.commentCount = data.commentCount || 0;
         this.shares = data.shares || [];
         this.shareCount = data.shareCount || 0;
         this.views = data.views || [];
@@ -225,14 +196,6 @@ class Post {
             throw new Error(`Content exceeds maximum length of ${postConfig.maxLength} characters for post type '${this.type}'`);
         }
 
-        // Check media requirements
-        if (postConfig.requiredMedia && this.media.length === 0) {
-            throw new Error(`Post type '${this.type}' requires media attachments`);
-        }
-
-        if (!postConfig.allowsMedia && this.media.length > 0) {
-            throw new Error(`Post type '${this.type}' does not allow media attachments`);
-        }
 
         // Validate visibility
         if (!VISIBILITY_LEVELS[this.visibility]) {
@@ -292,17 +255,10 @@ class Post {
                     .property('title', this.title)
                     .property('type', this.type)
                     .property('subtype', this.subtype)
-                    .property('media', JSON.stringify(this.media))
-                    .property('attachments', JSON.stringify(this.attachments))
-                    .property('mediaCount', this.mediaCount)
                     .property('authorId', this.authorId)
                     .property('visibility', this.visibility)
                     .property('targetAudience', JSON.stringify(this.targetAudience))
                     .property('excludeAudience', JSON.stringify(this.excludeAudience))
-                    .property('likes', JSON.stringify(this.likes))
-                    .property('likeCount', this.likeCount)
-                    .property('comments', JSON.stringify(this.comments))
-                    .property('commentCount', this.commentCount)
                     .property('shares', JSON.stringify(this.shares))
                     .property('shareCount', this.shareCount)
                     .property('views', JSON.stringify(this.views))
@@ -368,120 +324,9 @@ class Post {
         }
     }
 
-    async addLike(userId) {
-        const g = db.getTraversal();
-        
-        try {
-            // Check if user already liked the post
-            const existingLike = await g.V()
-                .has('User', 'id', userId)
-                .outE('LIKED')
-                .filter(__.inV().has('Post', 'id', this.id))
-                .toList();
 
-            if (existingLike.length > 0) {
-                return false; // Already liked
-            }
 
-            // Add like relationship
-            await g.V()
-                .has('User', 'id', userId)
-                .addE('LIKED')
-                .to(__.V().has('Post', 'id', this.id))
-                .property('likedAt', new Date().toISOString())
-                .iterate();
 
-            // Update like count and array
-            this.likes.push(userId);
-            this.likeCount = this.likes.length;
-            this.lastActivityAt = new Date().toISOString();
-            this.engagementScore += 1;
-
-            // Update in database
-            await g.V().has('Post', 'id', this.id)
-                .property('likes', JSON.stringify(this.likes))
-                .property('likeCount', this.likeCount)
-                .property('lastActivityAt', this.lastActivityAt)
-                .property('engagementScore', this.engagementScore)
-                .iterate();
-
-            return true;
-        } catch (error) {
-            throw new Error(`Error adding like: ${error.message}`);
-        }
-    }
-
-    async removeLike(userId) {
-        const g = db.getTraversal();
-        
-        try {
-            // Remove like relationship
-            await g.V()
-                .has('User', 'id', userId)
-                .outE('LIKED')
-                .filter(__.inV().has('Post', 'id', this.id))
-                .drop()
-                .iterate();
-
-            // Update like count and array
-            this.likes = this.likes.filter(id => id !== userId);
-            this.likeCount = this.likes.length;
-            this.lastActivityAt = new Date().toISOString();
-            this.engagementScore = Math.max(0, this.engagementScore - 1);
-
-            // Update in database
-            await g.V().has('Post', 'id', this.id)
-                .property('likes', JSON.stringify(this.likes))
-                .property('likeCount', this.likeCount)
-                .property('lastActivityAt', this.lastActivityAt)
-                .property('engagementScore', this.engagementScore)
-                .iterate();
-
-            return true;
-        } catch (error) {
-            throw new Error(`Error removing like: ${error.message}`);
-        }
-    }
-
-    async addComment(commentData) {
-        const g = db.getTraversal();
-        
-        try {
-            const Comment = require('./Comment');
-            const comment = new Comment({
-                ...commentData,
-                postId: this.id
-            });
-
-            await comment.save();
-
-            // Update comment count
-            this.commentCount += 1;
-            this.lastActivityAt = new Date().toISOString();
-            this.engagementScore += 2; // Comments worth more than likes
-
-            await g.V().has('Post', 'id', this.id)
-                .property('commentCount', this.commentCount)
-                .property('lastActivityAt', this.lastActivityAt)
-                .property('engagementScore', this.engagementScore)
-                .iterate();
-
-            return comment;
-        } catch (error) {
-            throw new Error(`Error adding comment: ${error.message}`);
-        }
-    }
-
-    async getComments() {
-        const g = db.getTraversal();
-        
-        try {
-            const Comment = require('./Comment');
-            return await Comment.findByPost(this.id);
-        } catch (error) {
-            throw new Error(`Error getting comments: ${error.message}`);
-        }
-    }
 
     async getLikes() {
         const g = db.getTraversal();
@@ -677,8 +522,6 @@ class Post {
                 .drop()
                 .iterate();
             
-            // Delete comments
-            await g.V().has('Comment', 'postId', id).drop().iterate();
             
             // Delete post vertex
             await g.V().has('Post', 'id', id).drop().iterate();
@@ -701,7 +544,7 @@ class Post {
             // Parse JSON fields
             const jsonFields = [
                 'media', 'attachments', 'targetAudience', 'excludeAudience',
-                'likes', 'comments', 'shares', 'views', 'tags', 'hashtags',
+                'likes', 'shares', 'views', 'tags', 'hashtags',
                 'mentionedUsers', 'linkedEvents', 'location', 'collaborators',
                 'contributors', 'sources', 'references', 'credits',
                 'editHistory', 'flags', 'distributionChannels'

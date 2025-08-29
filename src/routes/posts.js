@@ -95,11 +95,6 @@ router.get('/', auth, PostController.getAllPosts);
  *         required: true
  *         schema:
  *           type: string
- *       - in: query
- *         name: includeComments
- *         schema:
- *           type: boolean
- *           default: true
  *     responses:
  *       200:
  *         description: Post retrieved successfully
@@ -137,10 +132,6 @@ router.get('/:id', auth, PostController.getPostById);
  *                 type: string
  *                 enum: [public, family, private, custom]
  *                 default: family
- *               media:
- *                 type: array
- *                 items:
- *                   type: object
  *               tags:
  *                 type: array
  *                 items:
@@ -209,86 +200,8 @@ router.put('/:id', auth, PostController.updatePost);
  */
 router.delete('/:id', auth, PostController.deletePost);
 
-/**
- * @swagger
- * /api/posts/{id}/like:
- *   post:
- *     summary: Toggle like on post
- *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Like toggled successfully
- *       404:
- *         description: Post not found
- */
-router.post('/:id/like', auth, PostController.toggleLike);
 
-/**
- * @swagger
- * /api/posts/{id}/comments:
- *   post:
- *     summary: Add comment to post
- *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - content
- *             properties:
- *               content:
- *                 type: string
- *               parentCommentId:
- *                 type: string
- *     responses:
- *       201:
- *         description: Comment added successfully
- *       400:
- *         description: Invalid input data
- *       404:
- *         description: Post not found
- */
-router.post('/:id/comments', auth, PostController.addComment);
 
-/**
- * @swagger
- * /api/posts/comments/{commentId}:
- *   delete:
- *     summary: Delete comment
- *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: commentId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Comment deleted successfully
- *       404:
- *         description: Comment not found or not authorized
- */
-router.delete('/comments/:commentId', auth, PostController.deleteComment);
 
 /**
  * @swagger

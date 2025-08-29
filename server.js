@@ -10,7 +10,6 @@ const authRoutes = require('./src/routes/auth');
 const familyRoutes = require('./src/routes/family');
 const eventRoutes = require('./src/routes/events');
 const postRoutes = require('./src/routes/posts');
-const mediaRoutes = require('./src/routes/media');
 const { specs, swaggerUi } = require('./src/config/swagger');
 
 // Import telemetry middleware
@@ -45,7 +44,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/media', mediaRoutes);
 
 // Health check endpoint
 /**
@@ -140,8 +138,6 @@ app.get('/', (req, res) => {
             'POST /api/events': 'Create event',
             'GET /api/posts/feed': 'Get social feed',
             'POST /api/posts': 'Create post',
-            'GET /api/media': 'Get media',
-            'POST /api/media': 'Upload media',
             'GET /health': 'Health check with telemetry info',
             'GET /metrics': 'Prometheus metrics endpoint',
             'GET /api-docs': 'API Documentation (Swagger)'
