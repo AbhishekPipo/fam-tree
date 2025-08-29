@@ -2,8 +2,8 @@ const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
 const { PrometheusExporter } = require('@opentelemetry/exporter-prometheus');
-const { Resource } = require('@opentelemetry/resources');
-const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { resourceFromAttributes } = require('@opentelemetry/resources');
+const { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION, SEMRESATTRS_SERVICE_NAMESPACE, SEMRESATTRS_DEPLOYMENT_ENVIRONMENT } = require('@opentelemetry/semantic-conventions');
 const opentelemetry = require('@opentelemetry/api');
 
 /**
@@ -24,11 +24,11 @@ const ENABLE_TRACING = process.env.ENABLE_TRACING !== 'false';
 const ENABLE_METRICS = process.env.ENABLE_METRICS !== 'false';
 
 // Create resource with service information
-const resource = new Resource({
-  [SemanticResourceAttributes.SERVICE_NAME]: SERVICE_NAME,
-  [SemanticResourceAttributes.SERVICE_VERSION]: SERVICE_VERSION,
-  [SemanticResourceAttributes.SERVICE_NAMESPACE]: SERVICE_NAMESPACE,
-  [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: ENVIRONMENT,
+const resource = resourceFromAttributes({
+  [SEMRESATTRS_SERVICE_NAME]: SERVICE_NAME,
+  [SEMRESATTRS_SERVICE_VERSION]: SERVICE_VERSION,
+  [SEMRESATTRS_SERVICE_NAMESPACE]: SERVICE_NAMESPACE,
+  [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: ENVIRONMENT,
 });
 
 // Configure exporters
